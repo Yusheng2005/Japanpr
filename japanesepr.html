@@ -4,55 +4,187 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>日文單字測驗練習</title>
+    <!-- 引入高質感的 Google 字體 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { background-color: #f0f2f5; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+        /* 基礎設定 */
+        * { 
+            box-sizing: border-box; 
+            font-family: 'Noto Sans TC', sans-serif; 
+        }
+        body { 
+            /* 現代感的柔和漸層背景 */
+            background: linear-gradient(135deg, #f6f8fd 0%, #eef2fa 100%);
+            margin: 0; padding: 0; 
+            min-height: 100vh; 
+            display: flex; flex-direction: column; align-items: center; 
+            color: #334155;
+        }
         
-        /* 導覽列與頭像 */
-        nav { width: 100%; background: #ffffff; padding: 10px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: flex-end; align-items: center; position: fixed; top: 0; left: 0; z-index: 100; }
-        .avatar-btn { background: #e4e6eb; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
-        .avatar-btn:hover { background: #d8dadf; }
-        .nav-menu { margin-right: 15px; font-weight: bold; color: #0866ff; display: none; cursor: pointer;}
+        /* 導覽列與頭像 (毛玻璃效果) */
+        nav { 
+            width: 100%; 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(12px);
+            padding: 12px 24px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03); 
+            display: flex; justify-content: flex-end; align-items: center; 
+            position: fixed; top: 0; left: 0; z-index: 100; 
+        }
+        .avatar-btn { 
+            background: #ffffff; border: 2px solid #e2e8f0; 
+            border-radius: 50%; width: 44px; height: 44px; 
+            font-size: 20px; cursor: pointer; display: flex; 
+            justify-content: center; align-items: center; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .avatar-btn:hover { 
+            background: #f8fafc; border-color: #3b82f6; 
+            transform: scale(1.05);
+        }
+        .nav-menu { 
+            margin-right: 20px; font-weight: 700; color: #3b82f6; 
+            display: none; cursor: pointer; transition: 0.2s;
+        }
+        .nav-menu:hover { opacity: 0.8; }
         
-        /* 容器通用樣式 */
-        .container { background: #ffffff; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 90%; max-width: 500px; margin-top: 80px; margin-bottom: 20px; }
+        /* 主容器 (卡片化設計) */
+        .container { 
+            background: #ffffff; 
+            padding: 2.5rem 2rem; 
+            border-radius: 24px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.06), 0 2px 10px rgba(0,0,0,0.02); 
+            width: 90%; max-width: 500px; 
+            margin-top: 100px; margin-bottom: 30px; 
+            border: 1px solid #f1f5f9;
+        }
         .hidden { display: none !important; }
-        h1, h2, h3 { text-align: center; color: #1c1e21; }
+        h1, h2, h3 { text-align: center; color: #0f172a; margin-top: 0;}
+        h1 { font-weight: 900; font-size: 28px; margin-bottom: 30px; letter-spacing: 1px;}
         
         /* 表單與設定區 */
-        .setting-group { margin-bottom: 20px; }
-        .setting-group > label { display: block; margin-bottom: 12px; font-weight: bold; color: #4b4f56; }
-        .radio-group, .checkbox-group { display: flex; flex-wrap: wrap; gap: 15px; }
-        .radio-group label, .checkbox-group label { display: flex; align-items: center; cursor: pointer; font-size: 16px; }
-        .range-container { display: flex; align-items: center; gap: 15px; }
-        input[type="range"] { flex-grow: 1; cursor: pointer; }
-        .range-value-display { font-size: 18px; font-weight: bold; color: #0866ff; min-width: 50px; text-align: right; }
-        input[type="text"], input[type="password"], input[type="file"] { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; }
+        .setting-group { margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 16px; }
+        .setting-group > label { display: block; margin-bottom: 12px; font-weight: 700; color: #475569; font-size: 15px; }
+        
+        /* 單選與複選框美化 */
+        .radio-group, .checkbox-group { display: flex; flex-wrap: wrap; gap: 12px; }
+        .radio-group label, .checkbox-group label { 
+            display: flex; align-items: center; cursor: pointer; font-size: 15px; 
+            background: #ffffff; padding: 8px 16px; border-radius: 12px;
+            border: 1px solid #cbd5e1; transition: 0.2s; font-weight: 500;
+        }
+        .radio-group label:hover, .checkbox-group label:hover { border-color: #94a3b8; background: #f1f5f9; }
+        input[type="radio"], input[type="checkbox"] { 
+            accent-color: #3b82f6; width: 18px; height: 18px; margin-right: 8px; cursor: pointer;
+        }
+        
+        /* 滑桿美化 */
+        .range-container { display: flex; align-items: center; gap: 15px; padding: 5px 0; }
+        input[type="range"] { 
+            flex-grow: 1; cursor: pointer; height: 8px; background: #e2e8f0; 
+            border-radius: 8px; outline: none; -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 22px; height: 22px;
+            background: #3b82f6; border-radius: 50%; cursor: pointer;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4); transition: 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+        .range-value-display { font-size: 18px; font-weight: 900; color: #3b82f6; min-width: 50px; text-align: right; }
+        
+        /* 輸入框美化 (後台) */
+        input[type="text"], input[type="password"], input[type="file"] { 
+            width: 100%; padding: 14px; margin-bottom: 15px; 
+            border: 2px solid #e2e8f0; border-radius: 12px; 
+            font-size: 15px; transition: 0.3s; background: #f8fafc;
+        }
+        input[type="text"]:focus, input[type="password"]:focus { 
+            border-color: #3b82f6; outline: none; background: #ffffff; 
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); 
+        }
 
-        /* 按鈕樣式 */
-        .btn { display: block; width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; background: #e4e6eb; color: #1c1e21; }
-        .btn:hover:not(:disabled) { background: #d8dadf; }
-        .btn-primary { background: #0866ff; color: white; }
-        .btn-primary:hover { background: #0054d1; }
-        .btn-danger { background: #e41e3f; color: white; padding: 6px 12px; font-size: 14px; width: auto; display: inline-block; margin: 0;}
-        .btn-danger:hover { background: #c91835; }
-        .btn:disabled { cursor: default; opacity: 0.9; }
+        /* 按鈕美化 */
+        .btn { 
+            display: block; width: 100%; padding: 16px; margin: 12px 0; 
+            border: 2px solid transparent; border-radius: 16px; 
+            font-size: 18px; font-weight: 700; cursor: pointer; 
+            transition: all 0.2s; background: #f1f5f9; color: #334155; 
+        }
+        .btn:hover:not(:disabled) { background: #e2e8f0; }
+        .btn:active:not(:disabled) { transform: scale(0.98); }
+        
+        .btn-primary { 
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+            color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); 
+        }
+        .btn-primary:hover:not(:disabled) { 
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4); 
+            transform: translateY(-2px); 
+        }
+        
+        .btn-danger { 
+            background: #ef4444; color: white; padding: 8px 16px; 
+            font-size: 14px; width: auto; display: inline-block; margin: 0; 
+            border-radius: 10px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+        .btn-danger:hover { background: #dc2626; transform: translateY(-1px); }
+        .btn:disabled { cursor: not-allowed; opacity: 0.6; filter: grayscale(100%); }
         
         /* 測驗區與錯題 */
-        .correct { background: #31a24c !important; color: white !important; }
-        .wrong { background: #e41e3f !important; color: white !important; }
-        .question-text { font-size: 32px; text-align: center; margin: 20px 0; font-weight: bold; }
-        .progress { text-align: center; color: #606770; margin-bottom: 15px; }
-        .score-display { font-size: 24px; text-align: center; font-weight: bold; margin: 20px 0; color: #0866ff; }
-        .mistake-list { max-height: 300px; overflow-y: auto; }
-        .mistake-item { background: #fdf2f2; padding: 12px; border-left: 5px solid #e41e3f; margin-bottom: 10px; border-radius: 6px; }
-        .mistake-q { font-weight: bold; font-size: 18px; margin-bottom: 5px;}
-        .mistake-wrong { color: #e41e3f; margin-bottom: 3px;}
-        .mistake-correct { color: #31a24c; }
+        .correct { 
+            background: #10b981 !important; color: white !important; 
+            border-color: #10b981 !important; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); 
+        }
+        .wrong { 
+            background: #ef4444 !important; color: white !important; 
+            border-color: #ef4444 !important; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); 
+            animation: shake 0.4s; 
+        }
+        
+        /* 答錯震動動畫 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        .question-text { font-size: 40px; text-align: center; margin: 30px 0; font-weight: 900; color: #0f172a;}
+        .progress { text-align: center; color: #64748b; font-weight: 700; letter-spacing: 1px; font-size: 14px; text-transform: uppercase; }
+        .score-display { font-size: 32px; text-align: center; font-weight: 900; margin: 20px 0; color: #3b82f6; }
+        
+        /* 錯題列表美化 */
+        .mistake-list { max-height: 350px; overflow-y: auto; padding-right: 5px; margin-top: 15px; }
+        .mistake-list::-webkit-scrollbar { width: 6px; }
+        .mistake-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        .mistake-item { 
+            background: #ffffff; padding: 16px; 
+            border: 1px solid #fee2e2; border-left: 6px solid #ef4444; 
+            margin-bottom: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .mistake-q { font-weight: 900; font-size: 18px; margin-bottom: 8px; color: #0f172a;}
+        .mistake-wrong { color: #ef4444; margin-bottom: 4px; font-weight: 500;}
+        .mistake-correct { color: #10b981; font-weight: 700; }
 
         /* 管理員列表 */
         .admin-lesson-list { list-style: none; padding: 0; }
-        .admin-lesson-item { display: flex; justify-content: space-between; align-items: center; background: #f0f2f5; padding: 10px; border-radius: 6px; margin-bottom: 10px; }
+        .admin-lesson-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: #ffffff; border: 1px solid #e2e8f0; padding: 12px 16px; 
+            border-radius: 12px; margin-bottom: 10px; font-weight: 700; color: #334155;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        
+        /* 載入動畫 */
+        #loading-text { font-weight: 700; color: #3b82f6; display: flex; align-items: center; gap: 8px;}
+        #loading-text::before {
+            content: ""; width: 16px; height: 16px; 
+            border: 3px solid #3b82f6; border-top-color: transparent; 
+            border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -60,14 +192,14 @@
 <!-- 頂部導覽列 -->
 <nav>
     <div id="nav-admin-text" class="nav-menu" onclick="showPage('admin-page')">管理員後台</div>
-    <div id="nav-logout" class="nav-menu" style="color: #e41e3f;" onclick="handleLogout()">登出</div>
+    <div id="nav-logout" class="nav-menu" style="color: #ef4444;" onclick="handleLogout()">登出</div>
     <button class="avatar-btn" onclick="toggleLoginModal()">👤</button>
 </nav>
 
 <!-- 登入視窗 -->
 <div class="container hidden" id="login-page">
     <h2>管理員登入</h2>
-    <input type="text" id="email" placeholder="信箱">
+    <input type="text" id="email" placeholder="信箱 (例如 user@admin.com)">
     <input type="password" id="password" placeholder="密碼">
     <button class="btn btn-primary" onclick="handleLogin()">登入</button>
     <button class="btn" onclick="showPage('setup-page')">取消</button>
@@ -75,16 +207,16 @@
 
 <!-- 管理員後台 -->
 <div class="container hidden" id="admin-page">
-    <h2>管理員後台</h2>
+    <h2>管理員後台 ⚙️</h2>
     
     <div class="setting-group">
         <label>1. 上傳新課程單字 (JSON檔)</label>
         <input type="text" id="new-lesson-name" placeholder="輸入課程名稱 (例如: 第十二課)">
         <input type="file" id="json-upload" accept=".json">
-        <button class="btn btn-primary" onclick="uploadJSON()">上傳並儲存</button>
+        <button class="btn btn-primary" onclick="uploadJSON()">上傳並儲存 🚀</button>
     </div>
 
-    <hr style="margin: 20px 0; border: 0.5px solid #ccc;">
+    <hr style="margin: 24px 0; border: 0; border-top: 2px dashed #e2e8f0;">
 
     <div class="setting-group">
         <label>2. 管理現有課程</label>
@@ -98,10 +230,10 @@
 
 <!-- 測驗設定首頁 -->
 <div class="container" id="setup-page">
-    <h1>日文單字測驗練習</h1>
+    <h1>日文單字測驗練習 🌸</h1>
     
     <div class="setting-group">
-        <label>翻譯方向：</label>
+        <label>翻譯方向</label>
         <div class="radio-group">
             <label><input type="radio" name="direction" value="zh2ja" checked> 中文 ➔ 日文</label>
             <label><input type="radio" name="direction" value="ja2zh"> 日文 ➔ 中文</label>
@@ -109,15 +241,15 @@
     </div>
 
     <div class="setting-group">
-        <label>練習範圍 (從資料庫載入)：</label>
-        <div id="loading-text" style="color: #606770;">載入資料庫中...</div>
+        <label>練習範圍</label>
+        <div id="loading-text">載入資料庫中...</div>
         <div class="checkbox-group" id="dynamic-categories">
             <!-- 從資料庫讀取的課程會顯示在這裡 -->
         </div>
     </div>
 
     <div class="setting-group">
-        <label>測驗題數 (以5題為單位)：</label>
+        <label>測驗題數</label>
         <div class="range-container">
             <input type="range" id="question-count" min="5" max="100" step="5" value="10" oninput="document.getElementById('range-display').innerText = this.value">
             <div class="range-value-display"><span id="range-display">10</span> 題</div>
@@ -136,14 +268,16 @@
 
 <!-- 結果頁面 -->
 <div class="container hidden" id="result-page">
-    <h2>測驗結束</h2>
+    <h2>測驗結束 🎉</h2>
     <div class="score-display" id="score-text">分數: 0 / 10</div>
     <div id="mistakes-container">
-        <h3>錯題檢討：</h3>
+        <h3 style="color: #ef4444; margin-top: 30px;">錯題檢討</h3>
         <div class="mistake-list" id="mistake-list"></div>
     </div>
-    <button class="btn btn-primary" onclick="showPage('setup-page')">回主選單</button>
+    <button class="btn btn-primary" style="margin-top: 20px;" onclick="showPage('setup-page')">繼續練習</button>
 </div>
+
+<!-- ================= 以下區域為 Firebase 與 JS 邏輯，完全無更動 ================= -->
 
 <!-- 載入 Firebase 模組 (v10 modular) -->
 <script type="module">
@@ -152,7 +286,7 @@
     import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     // ⚠️ 這裡請換成你自己的 Firebase Config ⚠️
-  const firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyAP_-yJSyAx5r0x5e6br99yJvwCdji1yQ0",
   authDomain: "japanese-practice-39205.firebaseapp.com",
   projectId: "japanese-practice-39205",
@@ -168,14 +302,14 @@
     const db = getFirestore(app);
 
     // 全域變數
-    let vocabulariesData =[]; // 存放所有下載的課程資料
-    window.dbLessons =[]; // 讓一般腳本可以存取
+    let vocabulariesData =[]; 
+    window.dbLessons =[]; 
 
     // 頁面切換控制
     window.showPage = function(pageId) {
         document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
         document.getElementById(pageId).classList.remove('hidden');
-        if(pageId === 'setup-page') loadLessonsFromDB(); // 每次回首頁重新載入
+        if(pageId === 'setup-page') loadLessonsFromDB(); 
     }
 
     window.toggleLoginModal = function() {
@@ -235,10 +369,8 @@
                 const data = doc.data();
                 vocabulariesData.push({ id: doc.id, name: data.name, words: data.words });
                 
-                // 首頁的複選框
                 html += `<label><input type="checkbox" name="category" value="${doc.id}" checked> ${data.name}</label>`;
                 
-                // 管理員頁面的列表
                 adminHtml += `
                     <li class="admin-lesson-item">
                         <span>${data.name} (共 ${data.words.length} 字)</span>
@@ -246,10 +378,10 @@
                     </li>`;
             });
 
-            window.dbLessons = vocabulariesData; // 傳遞給測驗系統
+            window.dbLessons = vocabulariesData;
 
             if (vocabulariesData.length === 0) {
-                document.getElementById('dynamic-categories').innerHTML = '<span style="color:red;">目前資料庫沒有任何單字，請管理員上傳！</span>';
+                document.getElementById('dynamic-categories').innerHTML = '<span style="color:#ef4444; font-weight:bold;">目前資料庫沒有任何單字，請管理員上傳！</span>';
             } else {
                 document.getElementById('dynamic-categories').innerHTML = html;
                 document.getElementById('start-btn').disabled = false;
@@ -280,12 +412,10 @@
         reader.onload = async function(e) {
             try {
                 const wordsArray = JSON.parse(e.target.result);
-                // 簡易格式檢查
                 if (!Array.isArray(wordsArray) || !wordsArray[0].zh || !wordsArray[0].ja) {
                     throw new Error("格式錯誤");
                 }
 
-                // 寫入 Firestore (使用時間戳記當作 Document ID 避免重複)
                 const docId = 'lesson_' + Date.now();
                 await setDoc(doc(db, "lessons", docId), {
                     name: lessonName,
@@ -295,7 +425,7 @@
                 alert('上傳成功！');
                 document.getElementById('new-lesson-name').value = '';
                 fileInput.value = '';
-                loadLessonsFromDB(); // 重新整理列表
+                loadLessonsFromDB();
 
             } catch (err) {
                 alert('解析失敗！請確保檔案是標準的 JSON 陣列格式，包含 zh 與 ja 屬性。');
@@ -341,7 +471,6 @@
         return array;
     }
 
-    // 開始測驗
     function startQuiz() {
         direction = document.querySelector('input[name="direction"]:checked').value;
         const count = parseInt(document.getElementById('question-count').value);
@@ -352,7 +481,6 @@
             return;
         }
 
-        // 把選擇的課程單字全部合併進 fullPool
         fullPool =[];
         window.dbLessons.forEach(lesson => {
             if (selectedIds.includes(lesson.id)) {
@@ -364,7 +492,6 @@
             alert('所選範圍內沒有單字！'); return;
         }
 
-        // 產生題目
         quizData =[];
         let shuffledPool = shuffleArray([...fullPool]);
         for (let i = 0; i < count; i++) {
@@ -380,7 +507,6 @@
         showQuestion();
     }
 
-    // 顯示題目
     function showQuestion() {
         const currentItem = quizData[currentQuestionIndex];
         document.getElementById('progress-text').innerText = `題數: ${currentQuestionIndex + 1} / ${quizData.length}`;
@@ -392,7 +518,6 @@
 
         let options = [currentItem];
         
-        // 找三個不重複的干擾項
         let distractors = shuffleArray([...fullPool]).filter(item => item[ansField] !== currentItem[ansField]);
         options = options.concat(distractors.slice(0, 3));
         options = shuffleArray(options);
@@ -409,7 +534,6 @@
         });
     }
 
-    // 處理作答
     function handleAnswer(selectedBtn, selectedOption, correctItem, ansField) {
         const allBtns = document.getElementById('options-container').querySelectorAll('button');
         allBtns.forEach(btn => btn.disabled = true);
@@ -441,10 +565,9 @@
             } else {
                 showResult();
             }
-        }, 500);
+        }, 600); // 增加一點延遲讓動畫跑完
     }
 
-    // 顯示結果
     function showResult() {
         showPage('result-page');
         document.getElementById('score-text').innerText = `分數: ${score} / ${quizData.length}`;
@@ -461,7 +584,7 @@
                 const item = document.createElement('div');
                 item.className = 'mistake-item';
                 item.innerHTML = `
-                    <div class="mistake-q">題目：${m.q}</div>
+                    <div class="mistake-q">📌 ${m.q}</div>
                     <div class="mistake-wrong">你的答案：${m.wrongAns} ❌</div>
                     <div class="mistake-correct">正確答案：${m.correctAns} ✅</div>
                 `;
