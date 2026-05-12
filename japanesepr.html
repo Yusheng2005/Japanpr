@@ -5,149 +5,98 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>日文單字測驗練習</title>
     <style>
-        * {
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        body {
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            background: #ffffff;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 500px;
-        }
-        h1, h2 {
-            text-align: center;
-            color: #1c1e21;
-        }
-        .setting-group {
-            margin-bottom: 20px;
-        }
-        .setting-group > label {
-            display: block;
-            margin-bottom: 12px;
-            font-weight: bold;
-            color: #4b4f56;
-        }
-        .radio-group, .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .radio-group label, .checkbox-group label {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            font-size: 16px;
-        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background-color: #f0f2f5; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
         
-        /* 滑桿的樣式設計 */
-        .range-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        input[type="range"] {
-            flex-grow: 1;
-            cursor: pointer;
-        }
-        .range-value-display {
-            font-size: 18px;
-            font-weight: bold;
-            color: #0866ff;
-            min-width: 50px;
-            text-align: right;
-        }
+        /* 導覽列與頭像 */
+        nav { width: 100%; background: #ffffff; padding: 10px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: flex-end; align-items: center; position: fixed; top: 0; left: 0; z-index: 100; }
+        .avatar-btn { background: #e4e6eb; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
+        .avatar-btn:hover { background: #d8dadf; }
+        .nav-menu { margin-right: 15px; font-weight: bold; color: #0866ff; display: none; cursor: pointer;}
+        
+        /* 容器通用樣式 */
+        .container { background: #ffffff; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 90%; max-width: 500px; margin-top: 80px; margin-bottom: 20px; }
+        .hidden { display: none !important; }
+        h1, h2, h3 { text-align: center; color: #1c1e21; }
+        
+        /* 表單與設定區 */
+        .setting-group { margin-bottom: 20px; }
+        .setting-group > label { display: block; margin-bottom: 12px; font-weight: bold; color: #4b4f56; }
+        .radio-group, .checkbox-group { display: flex; flex-wrap: wrap; gap: 15px; }
+        .radio-group label, .checkbox-group label { display: flex; align-items: center; cursor: pointer; font-size: 16px; }
+        .range-container { display: flex; align-items: center; gap: 15px; }
+        input[type="range"] { flex-grow: 1; cursor: pointer; }
+        .range-value-display { font-size: 18px; font-weight: bold; color: #0866ff; min-width: 50px; text-align: right; }
+        input[type="text"], input[type="password"], input[type="file"] { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; }
 
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-            background: #e4e6eb;
-            color: #1c1e21;
-        }
-        .btn:hover:not(:disabled) {
-            background: #d8dadf;
-        }
-        .btn-primary {
-            background: #0866ff;
-            color: white;
-            margin-top: 20px;
-        }
-        .btn-primary:hover {
-            background: #0054d1;
-        }
-        .btn:disabled {
-            cursor: default;
-            opacity: 0.9;
-        }
-        .correct {
-            background: #31a24c !important;
-            color: white !important;
-        }
-        .wrong {
-            background: #e41e3f !important;
-            color: white !important;
-        }
-        .hidden {
-            display: none !important;
-        }
-        .question-text {
-            font-size: 32px;
-            text-align: center;
-            margin: 20px 0;
-            font-weight: bold;
-            color: #1c1e21;
-        }
-        .progress {
-            text-align: center;
-            color: #606770;
-            margin-bottom: 15px;
-            font-size: 16px;
-        }
-        .mistake-list {
-            margin-top: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .mistake-item {
-            background: #fdf2f2;
-            padding: 12px;
-            border-left: 5px solid #e41e3f;
-            margin-bottom: 10px;
-            border-radius: 6px;
-        }
+        /* 按鈕樣式 */
+        .btn { display: block; width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; background: #e4e6eb; color: #1c1e21; }
+        .btn:hover:not(:disabled) { background: #d8dadf; }
+        .btn-primary { background: #0866ff; color: white; }
+        .btn-primary:hover { background: #0054d1; }
+        .btn-danger { background: #e41e3f; color: white; padding: 6px 12px; font-size: 14px; width: auto; display: inline-block; margin: 0;}
+        .btn-danger:hover { background: #c91835; }
+        .btn:disabled { cursor: default; opacity: 0.9; }
+        
+        /* 測驗區與錯題 */
+        .correct { background: #31a24c !important; color: white !important; }
+        .wrong { background: #e41e3f !important; color: white !important; }
+        .question-text { font-size: 32px; text-align: center; margin: 20px 0; font-weight: bold; }
+        .progress { text-align: center; color: #606770; margin-bottom: 15px; }
+        .score-display { font-size: 24px; text-align: center; font-weight: bold; margin: 20px 0; color: #0866ff; }
+        .mistake-list { max-height: 300px; overflow-y: auto; }
+        .mistake-item { background: #fdf2f2; padding: 12px; border-left: 5px solid #e41e3f; margin-bottom: 10px; border-radius: 6px; }
         .mistake-q { font-weight: bold; font-size: 18px; margin-bottom: 5px;}
         .mistake-wrong { color: #e41e3f; margin-bottom: 3px;}
         .mistake-correct { color: #31a24c; }
-        .score-display {
-            font-size: 24px;
-            text-align: center;
-            font-weight: bold;
-            margin: 20px 0;
-            color: #0866ff;
-        }
+
+        /* 管理員列表 */
+        .admin-lesson-list { list-style: none; padding: 0; }
+        .admin-lesson-item { display: flex; justify-content: space-between; align-items: center; background: #f0f2f5; padding: 10px; border-radius: 6px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
+<!-- 頂部導覽列 -->
+<nav>
+    <div id="nav-admin-text" class="nav-menu" onclick="showPage('admin-page')">管理員後台</div>
+    <div id="nav-logout" class="nav-menu" style="color: #e41e3f;" onclick="handleLogout()">登出</div>
+    <button class="avatar-btn" onclick="toggleLoginModal()">👤</button>
+</nav>
+
+<!-- 登入視窗 -->
+<div class="container hidden" id="login-page">
+    <h2>管理員登入</h2>
+    <input type="text" id="email" placeholder="信箱">
+    <input type="password" id="password" placeholder="密碼">
+    <button class="btn btn-primary" onclick="handleLogin()">登入</button>
+    <button class="btn" onclick="showPage('setup-page')">取消</button>
+</div>
+
+<!-- 管理員後台 -->
+<div class="container hidden" id="admin-page">
+    <h2>管理員後台</h2>
+    
+    <div class="setting-group">
+        <label>1. 上傳新課程單字 (JSON檔)</label>
+        <input type="text" id="new-lesson-name" placeholder="輸入課程名稱 (例如: 第十二課)">
+        <input type="file" id="json-upload" accept=".json">
+        <button class="btn btn-primary" onclick="uploadJSON()">上傳並儲存</button>
+    </div>
+
+    <hr style="margin: 20px 0; border: 0.5px solid #ccc;">
+
+    <div class="setting-group">
+        <label>2. 管理現有課程</label>
+        <ul class="admin-lesson-list" id="admin-lesson-list">
+            <!-- 課程列表 JS 產生 -->
+        </ul>
+    </div>
+
+    <button class="btn" onclick="showPage('setup-page')">回測驗首頁</button>
+</div>
+
+<!-- 測驗設定首頁 -->
 <div class="container" id="setup-page">
     <h1>日文單字測驗練習</h1>
     
@@ -160,119 +109,228 @@
     </div>
 
     <div class="setting-group">
-        <label>練習範圍 (可複選)：</label>
-        <div class="checkbox-group">
-            <label><input type="checkbox" name="category" value="month" checked> 月份</label>
-            <label><input type="checkbox" name="category" value="date" checked> 日期</label>
-            <label><input type="checkbox" name="category" value="weekday" checked> 星期</label>
+        <label>練習範圍 (從資料庫載入)：</label>
+        <div id="loading-text" style="color: #606770;">載入資料庫中...</div>
+        <div class="checkbox-group" id="dynamic-categories">
+            <!-- 從資料庫讀取的課程會顯示在這裡 -->
         </div>
     </div>
 
     <div class="setting-group">
         <label>測驗題數 (以5題為單位)：</label>
         <div class="range-container">
-            <!-- 最小值5，最大值50，間距(step)設定為5 -->
-            <input type="range" id="question-count" min="5" max="50" step="5" value="10" oninput="updateRangeValue(this.value)">
+            <input type="range" id="question-count" min="5" max="100" step="5" value="10" oninput="document.getElementById('range-display').innerText = this.value">
             <div class="range-value-display"><span id="range-display">10</span> 題</div>
         </div>
     </div>
 
-    <button class="btn btn-primary" onclick="startQuiz()">開始測驗</button>
+    <button class="btn btn-primary" id="start-btn" onclick="startQuiz()" disabled>開始測驗</button>
 </div>
 
+<!-- 測驗頁面 -->
 <div class="container hidden" id="quiz-page">
     <div class="progress" id="progress-text">題數: 1 / 10</div>
-    <div class="question-text" id="question-text">一月</div>
-    <div id="options-container">
-        <!-- 選項按鈕會透過 JS 產生在這裡 -->
-    </div>
+    <div class="question-text" id="question-text">題目</div>
+    <div id="options-container"></div>
 </div>
 
+<!-- 結果頁面 -->
 <div class="container hidden" id="result-page">
     <h2>測驗結束</h2>
-    <div class="score-display" id="score-text">分數: 8 / 10</div>
-    
+    <div class="score-display" id="score-text">分數: 0 / 10</div>
     <div id="mistakes-container">
         <h3>錯題檢討：</h3>
-        <div class="mistake-list" id="mistake-list">
-            <!-- 錯題清單會透過 JS 產生在這裡 -->
-        </div>
+        <div class="mistake-list" id="mistake-list"></div>
     </div>
-    
-    <button class="btn btn-primary" onclick="returnToMenu()">回主選單</button>
+    <button class="btn btn-primary" onclick="showPage('setup-page')">回主選單</button>
 </div>
 
-<script>
-    // 即時更新滑桿顯示的題數數值
-    function updateRangeValue(val) {
-        document.getElementById('range-display').innerText = val;
+<!-- 載入 Firebase 模組 (v10 modular) -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // ⚠️ 這裡請換成你自己的 Firebase Config ⚠️
+  const firebaseConfig = {
+  apiKey: "AIzaSyAP_-yJSyAx5r0x5e6br99yJvwCdji1yQ0",
+  authDomain: "japanese-practice-39205.firebaseapp.com",
+  projectId: "japanese-practice-39205",
+  storageBucket: "japanese-practice-39205.firebasestorage.app",
+  messagingSenderId: "1029965429346",
+  appId: "1:1029965429346:web:be3c5a302176b3f8fa6f3b"
+};
+
+
+    // 初始化 Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // 全域變數
+    let vocabulariesData =[]; // 存放所有下載的課程資料
+    window.dbLessons =[]; // 讓一般腳本可以存取
+
+    // 頁面切換控制
+    window.showPage = function(pageId) {
+        document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
+        document.getElementById(pageId).classList.remove('hidden');
+        if(pageId === 'setup-page') loadLessonsFromDB(); // 每次回首頁重新載入
     }
 
-    // 單字庫 (日文僅用假名)
-    const dictionary =[
-        // 月份
-        { zh: '一月', ja: 'いちがつ', category: 'month' },
-        { zh: '二月', ja: 'にがつ', category: 'month' },
-        { zh: '三月', ja: 'さんがつ', category: 'month' },
-        { zh: '四月', ja: 'しがつ', category: 'month' },
-        { zh: '五月', ja: 'ごがつ', category: 'month' },
-        { zh: '六月', ja: 'ろくがつ', category: 'month' },
-        { zh: '七月', ja: 'しちがつ', category: 'month' },
-        { zh: '八月', ja: 'はちがつ', category: 'month' },
-        { zh: '九月', ja: 'くがつ', category: 'month' },
-        { zh: '十月', ja: 'じゅうがつ', category: 'month' },
-        { zh: '十一月', ja: 'じゅういちがつ', category: 'month' },
-        { zh: '十二月', ja: 'じゅうにがつ', category: 'month' },
-        // 星期
-        { zh: '星期一', ja: 'げつようび', category: 'weekday' },
-        { zh: '星期二', ja: 'かようび', category: 'weekday' },
-        { zh: '星期三', ja: 'すいようび', category: 'weekday' },
-        { zh: '星期四', ja: 'もくようび', category: 'weekday' },
-        { zh: '星期五', ja: 'きんようび', category: 'weekday' },
-        { zh: '星期六', ja: 'どようび', category: 'weekday' },
-        { zh: '星期日', ja: 'にちようび', category: 'weekday' },
-        // 日期
-        { zh: '1日', ja: 'ついたち', category: 'date' },
-        { zh: '2日', ja: 'ふつか', category: 'date' },
-        { zh: '3日', ja: 'みっか', category: 'date' },
-        { zh: '4日', ja: 'よっか', category: 'date' },
-        { zh: '5日', ja: 'いつか', category: 'date' },
-        { zh: '6日', ja: 'むいか', category: 'date' },
-        { zh: '7日', ja: 'なのか', category: 'date' },
-        { zh: '8日', ja: 'ようか', category: 'date' },
-        { zh: '9日', ja: 'ここのか', category: 'date' },
-        { zh: '10日', ja: 'とおか', category: 'date' },
-        { zh: '11日', ja: 'じゅういちにち', category: 'date' },
-        { zh: '12日', ja: 'じゅうににち', category: 'date' },
-        { zh: '13日', ja: 'じゅうさんにち', category: 'date' },
-        { zh: '14日', ja: 'じゅうよっか', category: 'date' },
-        { zh: '15日', ja: 'じゅうごにち', category: 'date' },
-        { zh: '16日', ja: 'じゅうろくにち', category: 'date' },
-        { zh: '17日', ja: 'じゅうしちにち', category: 'date' },
-        { zh: '18日', ja: 'じゅうはちにち', category: 'date' },
-        { zh: '19日', ja: 'じゅうくにち', category: 'date' },
-        { zh: '20日', ja: 'はつか', category: 'date' },
-        { zh: '21日', ja: 'にじゅういちにち', category: 'date' },
-        { zh: '22日', ja: 'にじゅうににち', category: 'date' },
-        { zh: '23日', ja: 'にじゅうさんにち', category: 'date' },
-        { zh: '24日', ja: 'にじゅうよっか', category: 'date' },
-        { zh: '25日', ja: 'にじゅうごにち', category: 'date' },
-        { zh: '26日', ja: 'にじゅうろくにち', category: 'date' },
-        { zh: '27日', ja: 'にじゅうしちにち', category: 'date' },
-        { zh: '28日', ja: 'にじゅうはちにち', category: 'date' },
-        { zh: '29日', ja: 'にじゅうくにち', category: 'date' },
-        { zh: '30日', ja: 'さんじゅうにち', category: 'date' },
-        { zh: '31日', ja: 'さんじゅういちにち', category: 'date' }
-    ];
+    window.toggleLoginModal = function() {
+        if (auth.currentUser) {
+            showPage('admin-page');
+        } else {
+            showPage('login-page');
+        }
+    }
 
+    // 驗證狀態監聽
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            document.getElementById('nav-admin-text').style.display = 'block';
+            document.getElementById('nav-logout').style.display = 'block';
+        } else {
+            document.getElementById('nav-admin-text').style.display = 'none';
+            document.getElementById('nav-logout').style.display = 'none';
+        }
+    });
+
+    // 登入
+    window.handleLogin = async function() {
+        const email = document.getElementById('email').value;
+        const pw = document.getElementById('password').value;
+        try {
+            await signInWithEmailAndPassword(auth, email, pw);
+            alert("登入成功！");
+            showPage('admin-page');
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+        } catch (error) {
+            alert("登入失敗，請檢查帳號密碼。");
+        }
+    }
+
+    // 登出
+    window.handleLogout = async function() {
+        await signOut(auth);
+        alert("已登出！");
+        showPage('setup-page');
+    }
+
+    // 從 Firestore 讀取所有課程
+    async function loadLessonsFromDB() {
+        document.getElementById('loading-text').classList.remove('hidden');
+        document.getElementById('dynamic-categories').innerHTML = '';
+        document.getElementById('start-btn').disabled = true;
+        
+        try {
+            const querySnapshot = await getDocs(collection(db, "lessons"));
+            vocabulariesData =[];
+            let html = '';
+            let adminHtml = '';
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                vocabulariesData.push({ id: doc.id, name: data.name, words: data.words });
+                
+                // 首頁的複選框
+                html += `<label><input type="checkbox" name="category" value="${doc.id}" checked> ${data.name}</label>`;
+                
+                // 管理員頁面的列表
+                adminHtml += `
+                    <li class="admin-lesson-item">
+                        <span>${data.name} (共 ${data.words.length} 字)</span>
+                        <button class="btn btn-danger" onclick="deleteLesson('${doc.id}')">刪除</button>
+                    </li>`;
+            });
+
+            window.dbLessons = vocabulariesData; // 傳遞給測驗系統
+
+            if (vocabulariesData.length === 0) {
+                document.getElementById('dynamic-categories').innerHTML = '<span style="color:red;">目前資料庫沒有任何單字，請管理員上傳！</span>';
+            } else {
+                document.getElementById('dynamic-categories').innerHTML = html;
+                document.getElementById('start-btn').disabled = false;
+            }
+            
+            document.getElementById('admin-lesson-list').innerHTML = adminHtml;
+            document.getElementById('loading-text').classList.add('hidden');
+
+        } catch (error) {
+            console.error("載入失敗:", error);
+            document.getElementById('loading-text').innerText = "載入失敗，請檢查網路或資料庫設定。";
+        }
+    }
+
+    // 管理員：上傳 JSON 寫入資料庫
+    window.uploadJSON = function() {
+        const fileInput = document.getElementById('json-upload');
+        const lessonName = document.getElementById('new-lesson-name').value.trim();
+        
+        if (!lessonName || fileInput.files.length === 0) {
+            alert('請輸入課程名稱並選擇檔案！');
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = async function(e) {
+            try {
+                const wordsArray = JSON.parse(e.target.result);
+                // 簡易格式檢查
+                if (!Array.isArray(wordsArray) || !wordsArray[0].zh || !wordsArray[0].ja) {
+                    throw new Error("格式錯誤");
+                }
+
+                // 寫入 Firestore (使用時間戳記當作 Document ID 避免重複)
+                const docId = 'lesson_' + Date.now();
+                await setDoc(doc(db, "lessons", docId), {
+                    name: lessonName,
+                    words: wordsArray
+                });
+
+                alert('上傳成功！');
+                document.getElementById('new-lesson-name').value = '';
+                fileInput.value = '';
+                loadLessonsFromDB(); // 重新整理列表
+
+            } catch (err) {
+                alert('解析失敗！請確保檔案是標準的 JSON 陣列格式，包含 zh 與 ja 屬性。');
+                console.error(err);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // 管理員：刪除課程
+    window.deleteLesson = async function(docId) {
+        if(confirm("確定要刪除這課的單字嗎？")) {
+            try {
+                await deleteDoc(doc(db, "lessons", docId));
+                alert("已刪除！");
+                loadLessonsFromDB();
+            } catch (err) {
+                alert("刪除失敗！");
+            }
+        }
+    }
+
+    // 初始化先載入資料庫
+    window.onload = loadLessonsFromDB;
+</script>
+
+<!-- 測驗邏輯腳本 -->
+<script>
     let quizData =[];
     let currentQuestionIndex = 0;
     let score = 0;
-    let mistakes =[];
+    let mistakes = [];
     let direction = 'zh2ja'; 
     let fullPool =[];
 
-    // 洗牌函數
     function shuffleArray(array) {
         let currentIndex = array.length, randomIndex;
         while (currentIndex !== 0) {
@@ -287,39 +345,44 @@
     function startQuiz() {
         direction = document.querySelector('input[name="direction"]:checked').value;
         const count = parseInt(document.getElementById('question-count').value);
+        const selectedIds = Array.from(document.querySelectorAll('input[name="category"]:checked')).map(cb => cb.value);
         
-        const selectedCategories = Array.from(document.querySelectorAll('input[name="category"]:checked')).map(cb => cb.value);
-        
-        if (selectedCategories.length === 0) {
+        if (selectedIds.length === 0) {
             alert('請至少選擇一個練習範圍！');
             return;
         }
 
-        fullPool = dictionary.filter(item => selectedCategories.includes(item.category));
-        
+        // 把選擇的課程單字全部合併進 fullPool
+        fullPool =[];
+        window.dbLessons.forEach(lesson => {
+            if (selectedIds.includes(lesson.id)) {
+                fullPool = fullPool.concat(lesson.words);
+            }
+        });
+
+        if(fullPool.length === 0) {
+            alert('所選範圍內沒有單字！'); return;
+        }
+
+        // 產生題目
         quizData =[];
         let shuffledPool = shuffleArray([...fullPool]);
-        
         for (let i = 0; i < count; i++) {
             quizData.push(shuffledPool[i % shuffledPool.length]);
         }
-        
         quizData = shuffleArray(quizData);
 
         currentQuestionIndex = 0;
         score = 0;
         mistakes =[];
 
-        document.getElementById('setup-page').classList.add('hidden');
-        document.getElementById('quiz-page').classList.remove('hidden');
-
+        showPage('quiz-page');
         showQuestion();
     }
 
     // 顯示題目
     function showQuestion() {
         const currentItem = quizData[currentQuestionIndex];
-        
         document.getElementById('progress-text').innerText = `題數: ${currentQuestionIndex + 1} / ${quizData.length}`;
         
         const qText = direction === 'zh2ja' ? currentItem.zh : currentItem.ja;
@@ -329,9 +392,9 @@
 
         let options = [currentItem];
         
+        // 找三個不重複的干擾項
         let distractors = shuffleArray([...fullPool]).filter(item => item[ansField] !== currentItem[ansField]);
         options = options.concat(distractors.slice(0, 3));
-        
         options = shuffleArray(options);
 
         const optionsContainer = document.getElementById('options-container');
@@ -383,9 +446,7 @@
 
     // 顯示結果
     function showResult() {
-        document.getElementById('quiz-page').classList.add('hidden');
-        document.getElementById('result-page').classList.remove('hidden');
-
+        showPage('result-page');
         document.getElementById('score-text').innerText = `分數: ${score} / ${quizData.length}`;
 
         const mistakeContainer = document.getElementById('mistakes-container');
@@ -408,13 +469,6 @@
             });
         }
     }
-
-    // 返回選單
-    function returnToMenu() {
-        document.getElementById('result-page').classList.add('hidden');
-        document.getElementById('setup-page').classList.remove('hidden');
-    }
 </script>
-
 </body>
 </html>
