@@ -4,61 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>日文單字測驗練習</title>
-    <!-- 引入高質感的 Google 字體 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     
     <style>
         /* 基礎設定 */
-        * { 
-            box-sizing: border-box; 
-            font-family: 'Noto Sans TC', sans-serif; 
-        }
+        * { box-sizing: border-box; font-family: 'Noto Sans TC', sans-serif; }
         body { 
-            /* 現代感的柔和漸層背景 */
             background: linear-gradient(135deg, #f6f8fd 0%, #eef2fa 100%);
-            margin: 0; padding: 0; 
-            min-height: 100vh; 
+            margin: 0; padding: 0; min-height: 100vh; 
             display: flex; flex-direction: column; align-items: center; 
             color: #334155;
         }
         
-        /* 導覽列與頭像 (毛玻璃效果) */
+        /* 導覽列與頭像 */
         nav { 
-            width: 100%; 
-            background: rgba(255, 255, 255, 0.85); 
-            backdrop-filter: blur(12px);
-            padding: 12px 24px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03); 
+            width: 100%; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px);
+            padding: 12px 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); 
             display: flex; justify-content: flex-end; align-items: center; 
             position: fixed; top: 0; left: 0; z-index: 100; 
         }
         .avatar-btn { 
-            background: #ffffff; border: 2px solid #e2e8f0; 
-            border-radius: 50%; width: 44px; height: 44px; 
-            font-size: 20px; cursor: pointer; display: flex; 
-            justify-content: center; align-items: center; 
+            background: #ffffff; border: 2px solid #e2e8f0; border-radius: 50%; 
+            width: 44px; height: 44px; font-size: 20px; cursor: pointer; 
+            display: flex; justify-content: center; align-items: center; 
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-        .avatar-btn:hover { 
-            background: #f8fafc; border-color: #3b82f6; 
-            transform: scale(1.05);
-        }
-        .nav-menu { 
-            margin-right: 20px; font-weight: 700; color: #3b82f6; 
-            display: none; cursor: pointer; transition: 0.2s;
-        }
+        .avatar-btn:hover { background: #f8fafc; border-color: #3b82f6; transform: scale(1.05); }
+        .nav-menu { margin-right: 20px; font-weight: 700; color: #3b82f6; display: none; cursor: pointer; transition: 0.2s; }
         .nav-menu:hover { opacity: 0.8; }
         
-        /* 主容器 (卡片化設計) */
+        /* 主容器 */
         .container { 
-            background: #ffffff; 
-            padding: 2.5rem 2rem; 
-            border-radius: 24px; 
+            background: #ffffff; padding: 2.5rem 2rem; border-radius: 24px; 
             box-shadow: 0 10px 40px rgba(0,0,0,0.06), 0 2px 10px rgba(0,0,0,0.02); 
             width: 90%; max-width: 500px; 
-            margin-top: 100px; margin-bottom: 30px; 
-            border: 1px solid #f1f5f9;
+            margin-top: 100px; margin-bottom: 20px; border: 1px solid #f1f5f9;
         }
         .hidden { display: none !important; }
         h1, h2, h3 { text-align: center; color: #0f172a; margin-top: 0;}
@@ -68,6 +49,24 @@
         .setting-group { margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 16px; }
         .setting-group > label { display: block; margin-bottom: 12px; font-weight: 700; color: #475569; font-size: 15px; }
         
+        /* 💡 新增：書籤 (Tabs) 分類樣式 */
+        .tabs-header {
+            display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px;
+            padding-bottom: 6px; border-bottom: 2px solid #e2e8f0;
+        }
+        .tabs-header::-webkit-scrollbar { height: 4px; }
+        .tabs-header::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .tab-btn {
+            background: transparent; border: none; padding: 8px 16px;
+            font-size: 15px; font-weight: 700; color: #64748b; cursor: pointer;
+            border-radius: 8px; transition: 0.2s; white-space: nowrap;
+        }
+        .tab-btn:hover { background: #e2e8f0; color: #334155; }
+        .tab-btn.active {
+            color: #3b82f6; background: #eff6ff;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+        }
+        
         /* 單選與複選框美化 */
         .radio-group, .checkbox-group { display: flex; flex-wrap: wrap; gap: 12px; }
         .radio-group label, .checkbox-group label { 
@@ -76,84 +75,36 @@
             border: 1px solid #cbd5e1; transition: 0.2s; font-weight: 500;
         }
         .radio-group label:hover, .checkbox-group label:hover { border-color: #94a3b8; background: #f1f5f9; }
-        input[type="radio"], input[type="checkbox"] { 
-            accent-color: #3b82f6; width: 18px; height: 18px; margin-right: 8px; cursor: pointer;
-        }
+        input[type="radio"], input[type="checkbox"] { accent-color: #3b82f6; width: 18px; height: 18px; margin-right: 8px; cursor: pointer; }
         
         /* 滑桿美化 */
         .range-container { display: flex; align-items: center; gap: 15px; padding: 5px 0; }
-        input[type="range"] { 
-            flex-grow: 1; cursor: pointer; height: 8px; background: #e2e8f0; 
-            border-radius: 8px; outline: none; -webkit-appearance: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 22px; height: 22px;
-            background: #3b82f6; border-radius: 50%; cursor: pointer;
-            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4); transition: 0.2s;
-        }
+        input[type="range"] { flex-grow: 1; cursor: pointer; height: 8px; background: #e2e8f0; border-radius: 8px; outline: none; -webkit-appearance: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; background: #3b82f6; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4); transition: 0.2s; }
         input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
         .range-value-display { font-size: 18px; font-weight: 900; color: #3b82f6; min-width: 50px; text-align: right; }
         
         /* 輸入框美化 (後台) */
         input[type="text"], input[type="password"], input[type="file"] { 
-            width: 100%; padding: 14px; margin-bottom: 15px; 
-            border: 2px solid #e2e8f0; border-radius: 12px; 
-            font-size: 15px; transition: 0.3s; background: #f8fafc;
+            width: 100%; padding: 14px; margin-bottom: 15px; border: 2px solid #e2e8f0; 
+            border-radius: 12px; font-size: 15px; transition: 0.3s; background: #f8fafc;
         }
-        input[type="text"]:focus, input[type="password"]:focus { 
-            border-color: #3b82f6; outline: none; background: #ffffff; 
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); 
-        }
+        input[type="text"]:focus, input[type="password"]:focus { border-color: #3b82f6; outline: none; background: #ffffff; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
 
         /* 按鈕美化 */
-        .btn { 
-            display: block; width: 100%; padding: 16px; margin: 12px 0; 
-            border: 2px solid transparent; border-radius: 16px; 
-            font-size: 18px; font-weight: 700; cursor: pointer; 
-            transition: all 0.2s; background: #f1f5f9; color: #334155; 
-        }
+        .btn { display: block; width: 100%; padding: 16px; margin: 12px 0; border: 2px solid transparent; border-radius: 16px; font-size: 18px; font-weight: 700; cursor: pointer; transition: all 0.2s; background: #f1f5f9; color: #334155; }
         .btn:hover:not(:disabled) { background: #e2e8f0; }
         .btn:active:not(:disabled) { transform: scale(0.98); }
-        
-        .btn-primary { 
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
-            color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); 
-        }
-        .btn-primary:hover:not(:disabled) { 
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4); 
-            transform: translateY(-2px); 
-        }
-        
-        .btn-danger { 
-            background: #ef4444; color: white; padding: 8px 16px; 
-            font-size: 14px; width: auto; display: inline-block; margin: 0; 
-            border-radius: 10px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-        }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
+        .btn-primary:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4); transform: translateY(-2px); }
+        .btn-danger { background: #ef4444; color: white; padding: 8px 16px; font-size: 14px; width: auto; display: inline-block; margin: 0; border-radius: 10px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3); }
         .btn-danger:hover { background: #dc2626; transform: translateY(-1px); }
-        
-        /* 修正：移除灰階效果，只降低未選中按鈕的透明度 */
         .btn:disabled { cursor: not-allowed; opacity: 0.5; }
         
         /* 測驗區與錯題 */
-        .correct { 
-            background: #10b981 !important; color: white !important; 
-            border-color: #10b981 !important; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important; 
-            opacity: 1 !important; /* 強制保持亮度 */
-        }
-        .wrong { 
-            background: #ef4444 !important; color: white !important; 
-            border-color: #ef4444 !important; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3) !important; 
-            animation: shake 0.4s; 
-            opacity: 1 !important; /* 強制保持亮度 */
-        }
-        
-        /* 答錯震動動畫 */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-6px); }
-            75% { transform: translateX(6px); }
-        }
-
+        .correct { background: #10b981 !important; color: white !important; border-color: #10b981 !important; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important; opacity: 1 !important; }
+        .wrong { background: #ef4444 !important; color: white !important; border-color: #ef4444 !important; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3) !important; animation: shake 0.4s; opacity: 1 !important; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
         .question-text { font-size: 40px; text-align: center; margin: 30px 0; font-weight: 900; color: #0f172a;}
         .progress { text-align: center; color: #64748b; font-weight: 700; letter-spacing: 1px; font-size: 14px; text-transform: uppercase; }
         .score-display { font-size: 32px; text-align: center; font-weight: 900; margin: 20px 0; color: #3b82f6; }
@@ -162,33 +113,27 @@
         .mistake-list { max-height: 350px; overflow-y: auto; padding-right: 5px; margin-top: 15px; }
         .mistake-list::-webkit-scrollbar { width: 6px; }
         .mistake-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        
-        .mistake-item { 
-            background: #ffffff; padding: 16px; 
-            border: 1px solid #fee2e2; border-left: 6px solid #ef4444; 
-            margin-bottom: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        }
+        .mistake-item { background: #ffffff; padding: 16px; border: 1px solid #fee2e2; border-left: 6px solid #ef4444; margin-bottom: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
         .mistake-q { font-weight: 900; font-size: 18px; margin-bottom: 8px; color: #0f172a;}
         .mistake-wrong { color: #ef4444; margin-bottom: 4px; font-weight: 500;}
         .mistake-correct { color: #10b981; font-weight: 700; }
 
         /* 管理員列表 */
         .admin-lesson-list { list-style: none; padding: 0; }
-        .admin-lesson-item { 
-            display: flex; justify-content: space-between; align-items: center; 
-            background: #ffffff; border: 1px solid #e2e8f0; padding: 12px 16px; 
-            border-radius: 12px; margin-bottom: 10px; font-weight: 700; color: #334155;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-        }
+        .admin-lesson-item { display: flex; flex-direction: column; gap: 8px; background: #ffffff; border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 12px; margin-bottom: 10px; font-weight: 700; color: #334155; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .admin-lesson-header { display: flex; justify-content: space-between; align-items: center; width: 100%;}
+        .admin-badge { background: #e2e8f0; padding: 4px 8px; border-radius: 6px; font-size: 12px; color: #475569;}
         
         /* 載入動畫 */
         #loading-text { font-weight: 700; color: #3b82f6; display: flex; align-items: center; gap: 8px;}
-        #loading-text::before {
-            content: ""; width: 16px; height: 16px; 
-            border: 3px solid #3b82f6; border-top-color: transparent; 
-            border-radius: 50%; animation: spin 1s linear infinite;
-        }
+        #loading-text::before { content: ""; width: 16px; height: 16px; border: 3px solid #3b82f6; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* 💡 新增：頁底簽名 */
+        footer {
+            margin-top: auto; padding: 20px 0 30px; text-align: center;
+            color: #94a3b8; font-size: 14px; font-weight: 700; letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
@@ -214,8 +159,10 @@
     <h2>管理員後台 ⚙️</h2>
     
     <div class="setting-group">
-        <label>1. 上傳新課程單字 (JSON檔)</label>
-        <input type="text" id="new-lesson-name" placeholder="輸入課程名稱 (例如: 第十二課)">
+        <label>1. 上傳新單字 (JSON檔)</label>
+        <!-- 💡 新增：分類名稱欄位 -->
+        <input type="text" id="new-category-name" placeholder="輸入大分類名稱 (例如: 大家的日本語)">
+        <input type="text" id="new-lesson-name" placeholder="輸入子課程名稱 (例如: 第一課)">
         <input type="file" id="json-upload" accept=".json">
         <button class="btn btn-primary" onclick="uploadJSON()">上傳並儲存 🚀</button>
     </div>
@@ -247,9 +194,17 @@
     <div class="setting-group">
         <label>練習範圍</label>
         <div id="loading-text">載入資料庫中...</div>
-        <div class="checkbox-group" id="dynamic-categories">
-            <!-- 從資料庫讀取的課程會顯示在這裡 -->
+        
+        <!-- 💡 新增：書籤結構區塊 -->
+        <div id="dynamic-categories-container" class="hidden">
+            <div class="tabs-header" id="tabs-header">
+                <!-- 標籤按鈕會產生在這裡 -->
+            </div>
+            <div id="tabs-content">
+                <!-- 勾選框內容會產生在這裡 -->
+            </div>
         </div>
+
     </div>
 
     <div class="setting-group">
@@ -281,6 +236,11 @@
     <button class="btn btn-primary" style="margin-top: 20px;" onclick="showPage('setup-page')">繼續練習</button>
 </div>
 
+<!-- 💡 新增：作者簽名頁底 -->
+<footer>
+    V1.1.4 &nbsp;&nbsp;|&nbsp;&nbsp; Built by Minami
+</footer>
+
 <!-- 載入 Firebase 模組 (v10 modular) -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -298,16 +258,13 @@
 };
 
 
-    // 初始化 Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // 全域變數
     let vocabulariesData =[]; 
     window.dbLessons =[]; 
 
-    // 頁面切換控制
     window.showPage = function(pageId) {
         document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
         document.getElementById(pageId).classList.remove('hidden');
@@ -315,14 +272,10 @@
     }
 
     window.toggleLoginModal = function() {
-        if (auth.currentUser) {
-            showPage('admin-page');
-        } else {
-            showPage('login-page');
-        }
+        if (auth.currentUser) showPage('admin-page');
+        else showPage('login-page');
     }
 
-    // 驗證狀態監聽
     onAuthStateChanged(auth, (user) => {
         if (user) {
             document.getElementById('nav-admin-text').style.display = 'block';
@@ -333,7 +286,6 @@
         }
     });
 
-    // 登入
     window.handleLogin = async function() {
         const email = document.getElementById('email').value;
         const pw = document.getElementById('password').value;
@@ -343,54 +295,99 @@
             showPage('admin-page');
             document.getElementById('email').value = '';
             document.getElementById('password').value = '';
-        } catch (error) {
-            alert("登入失敗，請檢查帳號密碼。");
-        }
+        } catch (error) { alert("登入失敗，請檢查帳號密碼。"); }
     }
 
-    // 登出
     window.handleLogout = async function() {
         await signOut(auth);
         alert("已登出！");
         showPage('setup-page');
     }
 
-    // 從 Firestore 讀取所有課程
+    // 💡 點擊書籤切換顯示內容的函數
+    window.switchTab = function(e, tabId) {
+        // 隱藏所有內容
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.style.display = 'none');
+        // 取消所有按鈕的活躍狀態
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        
+        // 顯示目標內容並標記按鈕
+        document.getElementById(tabId).style.display = 'flex';
+        e.currentTarget.classList.add('active');
+    }
+
+    // 從 Firestore 讀取所有課程 (加入分類邏輯)
     async function loadLessonsFromDB() {
         document.getElementById('loading-text').classList.remove('hidden');
-        document.getElementById('dynamic-categories').innerHTML = '';
+        document.getElementById('dynamic-categories-container').classList.add('hidden');
         document.getElementById('start-btn').disabled = true;
         
         try {
             const querySnapshot = await getDocs(collection(db, "lessons"));
             vocabulariesData =[];
-            let html = '';
             let adminHtml = '';
+            
+            // 💡 用來整理分類的物件
+            let categoriesMap = {};
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                vocabulariesData.push({ id: doc.id, name: data.name, words: data.words });
+                const docId = doc.id;
+                const catName = data.category || '未分類'; // 如果舊資料沒有分類，歸類到未分類
                 
-                html += `<label><input type="checkbox" name="category" value="${doc.id}" checked> ${data.name}</label>`;
+                vocabulariesData.push({ id: docId, name: data.name, category: catName, words: data.words });
+                
+                if (!categoriesMap[catName]) categoriesMap[catName] =[];
+                categoriesMap[catName].push({ id: docId, name: data.name });
                 
                 adminHtml += `
                     <li class="admin-lesson-item">
-                        <span>${data.name} (共 ${data.words.length} 字)</span>
-                        <button class="btn btn-danger" onclick="deleteLesson('${doc.id}')">刪除</button>
+                        <div class="admin-lesson-header">
+                            <span>${data.name} (共 ${data.words.length} 字)</span>
+                            <button class="btn btn-danger" onclick="deleteLesson('${docId}')">刪除</button>
+                        </div>
+                        <span class="admin-badge">分類：${catName}</span>
                     </li>`;
             });
 
             window.dbLessons = vocabulariesData;
 
             if (vocabulariesData.length === 0) {
-                document.getElementById('dynamic-categories').innerHTML = '<span style="color:#ef4444; font-weight:bold;">目前資料庫沒有任何單字，請管理員上傳！</span>';
+                document.getElementById('tabs-content').innerHTML = '<span style="color:#ef4444; font-weight:bold;">目前沒有單字，請管理員上傳！</span>';
+                document.getElementById('tabs-header').innerHTML = '';
             } else {
-                document.getElementById('dynamic-categories').innerHTML = html;
+                // 💡 動態產生書籤與內容
+                let tabsHtml = '';
+                let panesHtml = '';
+                let index = 0;
+
+                for (let cat in categoriesMap) {
+                    const isFirst = (index === 0);
+                    const activeClass = isFirst ? 'active' : '';
+                    const displayStyle = isFirst ? 'display: flex;' : 'display: none;';
+                    const tabId = 'pane-' + index;
+                    
+                    // 產生上方的標籤
+                    tabsHtml += `<button class="tab-btn ${activeClass}" onclick="switchTab(event, '${tabId}')">${cat}</button>`;
+                    
+                    // 產生下方的勾選內容
+                    panesHtml += `<div class="tab-pane checkbox-group" id="${tabId}" style="${displayStyle}">`;
+                    categoriesMap[cat].forEach(lesson => {
+                        panesHtml += `<label><input type="checkbox" name="category" value="${lesson.id}" checked> ${lesson.name}</label>`;
+                    });
+                    panesHtml += `</div>`;
+                    
+                    index++;
+                }
+
+                document.getElementById('tabs-header').innerHTML = tabsHtml;
+                document.getElementById('tabs-content').innerHTML = panesHtml;
                 document.getElementById('start-btn').disabled = false;
             }
             
             document.getElementById('admin-lesson-list').innerHTML = adminHtml;
             document.getElementById('loading-text').classList.add('hidden');
+            document.getElementById('dynamic-categories-container').classList.remove('hidden');
 
         } catch (error) {
             console.error("載入失敗:", error);
@@ -401,6 +398,7 @@
     // 管理員：上傳 JSON 寫入資料庫
     window.uploadJSON = function() {
         const fileInput = document.getElementById('json-upload');
+        const categoryName = document.getElementById('new-category-name').value.trim() || '未分類';
         const lessonName = document.getElementById('new-lesson-name').value.trim();
         
         if (!lessonName || fileInput.files.length === 0) {
@@ -420,12 +418,14 @@
 
                 const docId = 'lesson_' + Date.now();
                 await setDoc(doc(db, "lessons", docId), {
+                    category: categoryName, // 💡 新增存入資料庫的欄位
                     name: lessonName,
                     words: wordsArray
                 });
 
                 alert('上傳成功！');
                 document.getElementById('new-lesson-name').value = '';
+                // 保留 categoryName 不清空，方便連續上傳同一類的章節
                 fileInput.value = '';
                 loadLessonsFromDB();
 
@@ -437,24 +437,19 @@
         reader.readAsText(file);
     }
 
-    // 管理員：刪除課程
     window.deleteLesson = async function(docId) {
         if(confirm("確定要刪除這課的單字嗎？")) {
             try {
                 await deleteDoc(doc(db, "lessons", docId));
                 alert("已刪除！");
                 loadLessonsFromDB();
-            } catch (err) {
-                alert("刪除失敗！");
-            }
+            } catch (err) { alert("刪除失敗！"); }
         }
     }
 
-    // 初始化先載入資料庫
     window.onload = loadLessonsFromDB;
 </script>
 
-<!-- 測驗邏輯腳本 -->
 <script>
     let quizData =[];
     let currentQuestionIndex = 0;
@@ -476,10 +471,12 @@
     function startQuiz() {
         direction = document.querySelector('input[name="direction"]:checked').value;
         const count = parseInt(document.getElementById('question-count').value);
+        
+        // 不論在哪個書籤底下，只要有打勾的都會被抓到
         const selectedIds = Array.from(document.querySelectorAll('input[name="category"]:checked')).map(cb => cb.value);
         
         if (selectedIds.length === 0) {
-            alert('請至少選擇一個練習範圍！');
+            alert('請至少勾選一個練習範圍！(你可以切換書籤跨類別勾選)');
             return;
         }
 
@@ -538,7 +535,6 @@
 
     function handleAnswer(selectedBtn, selectedOption, correctItem, ansField) {
         const allBtns = document.getElementById('options-container').querySelectorAll('button');
-        // 先鎖定所有按鈕防止連點
         allBtns.forEach(btn => btn.disabled = true);
 
         const isCorrect = selectedOption[ansField] === correctItem[ansField];
@@ -548,7 +544,6 @@
             score++;
         } else {
             selectedBtn.classList.add('wrong');
-            // 把正確答案也標示出來
             allBtns.forEach(btn => {
                 if (btn.innerText === correctItem[ansField]) {
                     btn.classList.add('correct');
