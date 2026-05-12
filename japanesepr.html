@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日文單字測驗練習</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #1c1e21;
+        }
+        .setting-group {
+            margin-bottom: 20px;
+        }
+        .setting-group > label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: bold;
+            color: #4b4f56;
+        }
+        .radio-group, .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .radio-group label, .checkbox-group label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        /* 滑桿的樣式設計 */
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        input[type="range"] {
+            flex-grow: 1;
+            cursor: pointer;
+        }
+        .range-value-display {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0866ff;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            background: #e4e6eb;
+            color: #1c1e21;
+        }
+        .btn:hover:not(:disabled) {
+            background: #d8dadf;
+        }
+        .btn-primary {
+            background: #0866ff;
+            color: white;
+            margin-top: 20px;
+        }
+        .btn-primary:hover {
+            background: #0054d1;
+        }
+        .btn:disabled {
+            cursor: default;
+            opacity: 0.9;
+        }
+        .correct {
+            background: #31a24c !important;
+            color: white !important;
+        }
+        .wrong {
+            background: #e41e3f !important;
+            color: white !important;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .question-text {
+            font-size: 32px;
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+            color: #1c1e21;
+        }
+        .progress {
+            text-align: center;
+            color: #606770;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .mistake-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .mistake-item {
+            background: #fdf2f2;
+            padding: 12px;
+            border-left: 5px solid #e41e3f;
+            margin-bottom: 10px;
+            border-radius: 6px;
+        }
+        .mistake-q { font-weight: bold; font-size: 18px; margin-bottom: 5px;}
+        .mistake-wrong { color: #e41e3f; margin-bottom: 3px;}
+        .mistake-correct { color: #31a24c; }
+        .score-display {
+            font-size: 24px;
+            text-align: center;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #0866ff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="setup-page">
+    <h1>日文單字測驗練習</h1>
+    
+    <div class="setting-group">
+        <label>翻譯方向：</label>
+        <div class="radio-group">
+            <label><input type="radio" name="direction" value="zh2ja" checked> 中文 ➔ 日文</label>
+            <label><input type="radio" name="direction" value="ja2zh"> 日文 ➔ 中文</label>
+        </div>
+    </div>
+
+    <div class="setting-group">
+        <label>練習範圍 (可複選)：</label>
+        <div class="checkbox-group">
+            <label><input type="checkbox" name="category" value="month" checked> 月份</label>
+            <label><input type="checkbox" name="category" value="date" checked> 日期</label>
+            <label><input type="checkbox" name="category" value="weekday" checked> 星期</label>
+        </div>
+    </div>
+
+    <div class="setting-group">
+        <label>測驗題數 (以5題為單位)：</label>
+        <div class="range-container">
+            <!-- 最小值5，最大值50，間距(step)設定為5 -->
+            <input type="range" id="question-count" min="5" max="50" step="5" value="10" oninput="updateRangeValue(this.value)">
+            <div class="range-value-display"><span id="range-display">10</span> 題</div>
+        </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="startQuiz()">開始測驗</button>
+</div>
+
+<div class="container hidden" id="quiz-page">
+    <div class="progress" id="progress-text">題數: 1 / 10</div>
+    <div class="question-text" id="question-text">一月</div>
+    <div id="options-container">
+        <!-- 選項按鈕會透過 JS 產生在這裡 -->
+    </div>
+</div>
+
+<div class="container hidden" id="result-page">
+    <h2>測驗結束</h2>
+    <div class="score-display" id="score-text">分數: 8 / 10</div>
+    
+    <div id="mistakes-container">
+        <h3>錯題檢討：</h3>
+        <div class="mistake-list" id="mistake-list">
+            <!-- 錯題清單會透過 JS 產生在這裡 -->
+        </div>
+    </div>
+    
+    <button class="btn btn-primary" onclick="returnToMenu()">回主選單</button>
+</div>
+
+<script>
+    // 即時更新滑桿顯示的題數數值
+    function updateRangeValue(val) {
+        document.getElementById('range-display').innerText = val;
+    }
+
+    // 單字庫 (日文僅用假名)
+    const dictionary =[
+        // 月份
+        { zh: '一月', ja: 'いちがつ', category: 'month' },
+        { zh: '二月', ja: 'にがつ', category: 'month' },
+        { zh: '三月', ja: 'さんがつ', category: 'month' },
+        { zh: '四月', ja: 'しがつ', category: 'month' },
+        { zh: '五月', ja: 'ごがつ', category: 'month' },
+        { zh: '六月', ja: 'ろくがつ', category: 'month' },
+        { zh: '七月', ja: 'しちがつ', category: 'month' },
+        { zh: '八月', ja: 'はちがつ', category: 'month' },
+        { zh: '九月', ja: 'くがつ', category: 'month' },
+        { zh: '十月', ja: 'じゅうがつ', category: 'month' },
+        { zh: '十一月', ja: 'じゅういちがつ', category: 'month' },
+        { zh: '十二月', ja: 'じゅうにがつ', category: 'month' },
+        // 星期
+        { zh: '星期一', ja: 'げつようび', category: 'weekday' },
+        { zh: '星期二', ja: 'かようび', category: 'weekday' },
+        { zh: '星期三', ja: 'すいようび', category: 'weekday' },
+        { zh: '星期四', ja: 'もくようび', category: 'weekday' },
+        { zh: '星期五', ja: 'きんようび', category: 'weekday' },
+        { zh: '星期六', ja: 'どようび', category: 'weekday' },
+        { zh: '星期日', ja: 'にちようび', category: 'weekday' },
+        // 日期
+        { zh: '1日', ja: 'ついたち', category: 'date' },
+        { zh: '2日', ja: 'ふつか', category: 'date' },
+        { zh: '3日', ja: 'みっか', category: 'date' },
+        { zh: '4日', ja: 'よっか', category: 'date' },
+        { zh: '5日', ja: 'いつか', category: 'date' },
+        { zh: '6日', ja: 'むいか', category: 'date' },
+        { zh: '7日', ja: 'なのか', category: 'date' },
+        { zh: '8日', ja: 'ようか', category: 'date' },
+        { zh: '9日', ja: 'ここのか', category: 'date' },
+        { zh: '10日', ja: 'とおか', category: 'date' },
+        { zh: '11日', ja: 'じゅういちにち', category: 'date' },
+        { zh: '12日', ja: 'じゅうににち', category: 'date' },
+        { zh: '13日', ja: 'じゅうさんにち', category: 'date' },
+        { zh: '14日', ja: 'じゅうよっか', category: 'date' },
+        { zh: '15日', ja: 'じゅうごにち', category: 'date' },
+        { zh: '16日', ja: 'じゅうろくにち', category: 'date' },
+        { zh: '17日', ja: 'じゅうしちにち', category: 'date' },
+        { zh: '18日', ja: 'じゅうはちにち', category: 'date' },
+        { zh: '19日', ja: 'じゅうくにち', category: 'date' },
+        { zh: '20日', ja: 'はつか', category: 'date' },
+        { zh: '21日', ja: 'にじゅういちにち', category: 'date' },
+        { zh: '22日', ja: 'にじゅうににち', category: 'date' },
+        { zh: '23日', ja: 'にじゅうさんにち', category: 'date' },
+        { zh: '24日', ja: 'にじゅうよっか', category: 'date' },
+        { zh: '25日', ja: 'にじゅうごにち', category: 'date' },
+        { zh: '26日', ja: 'にじゅうろくにち', category: 'date' },
+        { zh: '27日', ja: 'にじゅうしちにち', category: 'date' },
+        { zh: '28日', ja: 'にじゅうはちにち', category: 'date' },
+        { zh: '29日', ja: 'にじゅうくにち', category: 'date' },
+        { zh: '30日', ja: 'さんじゅうにち', category: 'date' },
+        { zh: '31日', ja: 'さんじゅういちにち', category: 'date' }
+    ];
+
+    let quizData =[];
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let mistakes =[];
+    let direction = 'zh2ja'; 
+    let fullPool =[];
+
+    // 洗牌函數
+    function shuffleArray(array) {
+        let currentIndex = array.length, randomIndex;
+        while (currentIndex !== 0) {
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+            [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+        }
+        return array;
+    }
+
+    // 開始測驗
+    function startQuiz() {
+        direction = document.querySelector('input[name="direction"]:checked').value;
+        const count = parseInt(document.getElementById('question-count').value);
+        
+        const selectedCategories = Array.from(document.querySelectorAll('input[name="category"]:checked')).map(cb => cb.value);
+        
+        if (selectedCategories.length === 0) {
+            alert('請至少選擇一個練習範圍！');
+            return;
+        }
+
+        fullPool = dictionary.filter(item => selectedCategories.includes(item.category));
+        
+        quizData =[];
+        let shuffledPool = shuffleArray([...fullPool]);
+        
+        for (let i = 0; i < count; i++) {
+            quizData.push(shuffledPool[i % shuffledPool.length]);
+        }
+        
+        quizData = shuffleArray(quizData);
+
+        currentQuestionIndex = 0;
+        score = 0;
+        mistakes =[];
+
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+
+        showQuestion();
+    }
+
+    // 顯示題目
+    function showQuestion() {
+        const currentItem = quizData[currentQuestionIndex];
+        
+        document.getElementById('progress-text').innerText = `題數: ${currentQuestionIndex + 1} / ${quizData.length}`;
+        
+        const qText = direction === 'zh2ja' ? currentItem.zh : currentItem.ja;
+        const ansField = direction === 'zh2ja' ? 'ja' : 'zh';
+        
+        document.getElementById('question-text').innerText = qText;
+
+        let options = [currentItem];
+        
+        let distractors = shuffleArray([...fullPool]).filter(item => item[ansField] !== currentItem[ansField]);
+        options = options.concat(distractors.slice(0, 3));
+        
+        options = shuffleArray(options);
+
+        const optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = '';
+
+        options.forEach(option => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.innerText = option[ansField];
+            btn.onclick = () => handleAnswer(btn, option, currentItem, ansField);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    // 處理作答
+    function handleAnswer(selectedBtn, selectedOption, correctItem, ansField) {
+        const allBtns = document.getElementById('options-container').querySelectorAll('button');
+        allBtns.forEach(btn => btn.disabled = true);
+
+        const isCorrect = selectedOption[ansField] === correctItem[ansField];
+
+        if (isCorrect) {
+            selectedBtn.classList.add('correct');
+            score++;
+        } else {
+            selectedBtn.classList.add('wrong');
+            allBtns.forEach(btn => {
+                if (btn.innerText === correctItem[ansField]) {
+                    btn.classList.add('correct');
+                }
+            });
+
+            mistakes.push({
+                q: direction === 'zh2ja' ? correctItem.zh : correctItem.ja,
+                wrongAns: selectedOption[ansField],
+                correctAns: correctItem[ansField]
+            });
+        }
+
+        setTimeout(() => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }, 500);
+    }
+
+    // 顯示結果
+    function showResult() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+
+        document.getElementById('score-text').innerText = `分數: ${score} / ${quizData.length}`;
+
+        const mistakeContainer = document.getElementById('mistakes-container');
+        const mistakeList = document.getElementById('mistake-list');
+        mistakeList.innerHTML = '';
+
+        if (mistakes.length === 0) {
+            mistakeContainer.style.display = 'none';
+        } else {
+            mistakeContainer.style.display = 'block';
+            mistakes.forEach(m => {
+                const item = document.createElement('div');
+                item.className = 'mistake-item';
+                item.innerHTML = `
+                    <div class="mistake-q">題目：${m.q}</div>
+                    <div class="mistake-wrong">你的答案：${m.wrongAns} ❌</div>
+                    <div class="mistake-correct">正確答案：${m.correctAns} ✅</div>
+                `;
+                mistakeList.appendChild(item);
+            });
+        }
+    }
+
+    // 返回選單
+    function returnToMenu() {
+        document.getElementById('result-page').classList.add('hidden');
+        document.getElementById('setup-page').classList.remove('hidden');
+    }
+</script>
+
+</body>
+</html>
