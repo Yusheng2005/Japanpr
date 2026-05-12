@@ -49,7 +49,7 @@
         .setting-group { margin-bottom: 24px; background: #f8fafc; padding: 16px; border-radius: 16px; }
         .setting-group > label { display: block; margin-bottom: 12px; font-weight: 700; color: #475569; font-size: 15px; }
         
-        /* 💡 新增：書籤 (Tabs) 分類樣式 */
+        /* 書籤 (Tabs) 分類樣式 */
         .tabs-header {
             display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px;
             padding-bottom: 6px; border-bottom: 2px solid #e2e8f0;
@@ -97,8 +97,13 @@
         .btn:active:not(:disabled) { transform: scale(0.98); }
         .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
         .btn-primary:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4); transform: translateY(-2px); }
-        .btn-danger { background: #ef4444; color: white; padding: 8px 16px; font-size: 14px; width: auto; display: inline-block; margin: 0; border-radius: 10px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3); }
+        
+        /* 管理員列表編輯與刪除按鈕 */
+        .btn-danger { background: #ef4444; color: white; padding: 8px 16px; font-size: 14px; width: auto; display: inline-block; margin: 0; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3); }
         .btn-danger:hover { background: #dc2626; transform: translateY(-1px); }
+        .btn-edit { background: #3b82f6; color: white; padding: 8px 16px; font-size: 14px; width: auto; display: inline-block; margin: 0 8px 0 0; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3); }
+        .btn-edit:hover { background: #2563eb; transform: translateY(-1px); }
+
         .btn:disabled { cursor: not-allowed; opacity: 0.5; }
         
         /* 測驗區與錯題 */
@@ -129,11 +134,8 @@
         #loading-text::before { content: ""; width: 16px; height: 16px; border: 3px solid #3b82f6; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* 💡 新增：頁底簽名 */
-        footer {
-            margin-top: auto; padding: 20px 0 30px; text-align: center;
-            color: #94a3b8; font-size: 14px; font-weight: 700; letter-spacing: 0.5px;
-        }
+        /* 頁底簽名 */
+        footer { margin-top: auto; padding: 20px 0 30px; text-align: center; color: #94a3b8; font-size: 14px; font-weight: 700; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
@@ -160,7 +162,6 @@
     
     <div class="setting-group">
         <label>1. 上傳新單字 (JSON檔)</label>
-        <!-- 💡 新增：分類名稱欄位 -->
         <input type="text" id="new-category-name" placeholder="輸入大分類名稱 (例如: 大家的日本語)">
         <input type="text" id="new-lesson-name" placeholder="輸入子課程名稱 (例如: 第一課)">
         <input type="file" id="json-upload" accept=".json">
@@ -195,7 +196,6 @@
         <label>練習範圍</label>
         <div id="loading-text">載入資料庫中...</div>
         
-        <!-- 💡 新增：書籤結構區塊 -->
         <div id="dynamic-categories-container" class="hidden">
             <div class="tabs-header" id="tabs-header">
                 <!-- 標籤按鈕會產生在這裡 -->
@@ -223,6 +223,9 @@
     <div class="progress" id="progress-text">題數: 1 / 10</div>
     <div class="question-text" id="question-text">題目</div>
     <div id="options-container"></div>
+    
+    <!-- V1.1.5 新增：提早結束測驗按鈕 -->
+    <button class="btn" style="margin-top: 30px; background: #ffe4e6; color: #e11d48; border: 1px solid #fecdd3;" onclick="earlyEndQuiz()">⏹️ 提早結束測驗</button>
 </div>
 
 <!-- 結果頁面 -->
@@ -236,16 +239,17 @@
     <button class="btn btn-primary" style="margin-top: 20px;" onclick="showPage('setup-page')">繼續練習</button>
 </div>
 
-<!-- 💡 新增：作者簽名頁底 -->
+<!-- V1.1.5 頁底 -->
 <footer>
-    V1.1.4 &nbsp;&nbsp;|&nbsp;&nbsp; Built by Minami
+    V1.1.5 &nbsp;&nbsp;|&nbsp;&nbsp; Built by Minami
 </footer>
 
-<!-- 載入 Firebase 模組 (v10 modular) -->
+<!-- 載入 Firebase 模組 -->
 <script type="module">
+    // 💡 這裡有引入了新的 updateDoc 用來編輯資料
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     // ⚠️ 這裡請換成你自己的 Firebase Config ⚠️
     const firebaseConfig = {
@@ -304,19 +308,13 @@
         showPage('setup-page');
     }
 
-    // 💡 點擊書籤切換顯示內容的函數
     window.switchTab = function(e, tabId) {
-        // 隱藏所有內容
         document.querySelectorAll('.tab-pane').forEach(pane => pane.style.display = 'none');
-        // 取消所有按鈕的活躍狀態
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        
-        // 顯示目標內容並標記按鈕
         document.getElementById(tabId).style.display = 'flex';
         e.currentTarget.classList.add('active');
     }
 
-    // 從 Firestore 讀取所有課程 (加入分類邏輯)
     async function loadLessonsFromDB() {
         document.getElementById('loading-text').classList.remove('hidden');
         document.getElementById('dynamic-categories-container').classList.add('hidden');
@@ -326,25 +324,31 @@
             const querySnapshot = await getDocs(collection(db, "lessons"));
             vocabulariesData =[];
             let adminHtml = '';
-            
-            // 💡 用來整理分類的物件
             let categoriesMap = {};
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
                 const docId = doc.id;
-                const catName = data.category || '未分類'; // 如果舊資料沒有分類，歸類到未分類
+                const catName = data.category || '未分類'; 
                 
                 vocabulariesData.push({ id: docId, name: data.name, category: catName, words: data.words });
                 
                 if (!categoriesMap[catName]) categoriesMap[catName] =[];
                 categoriesMap[catName].push({ id: docId, name: data.name });
                 
+                // 安全處理字串中的單引號，防止編輯按鈕報錯
+                const safeName = data.name.replace(/'/g, "\\'");
+                const safeCat = catName.replace(/'/g, "\\'");
+
+                // V1.1.5 新增編輯按鈕
                 adminHtml += `
                     <li class="admin-lesson-item">
                         <div class="admin-lesson-header">
                             <span>${data.name} (共 ${data.words.length} 字)</span>
-                            <button class="btn btn-danger" onclick="deleteLesson('${docId}')">刪除</button>
+                            <div>
+                                <button class="btn-edit" onclick="editLesson('${docId}', '${safeName}', '${safeCat}')">編輯</button>
+                                <button class="btn-danger" onclick="deleteLesson('${docId}')">刪除</button>
+                            </div>
                         </div>
                         <span class="admin-badge">分類：${catName}</span>
                     </li>`;
@@ -356,7 +360,6 @@
                 document.getElementById('tabs-content').innerHTML = '<span style="color:#ef4444; font-weight:bold;">目前沒有單字，請管理員上傳！</span>';
                 document.getElementById('tabs-header').innerHTML = '';
             } else {
-                // 💡 動態產生書籤與內容
                 let tabsHtml = '';
                 let panesHtml = '';
                 let index = 0;
@@ -367,13 +370,12 @@
                     const displayStyle = isFirst ? 'display: flex;' : 'display: none;';
                     const tabId = 'pane-' + index;
                     
-                    // 產生上方的標籤
                     tabsHtml += `<button class="tab-btn ${activeClass}" onclick="switchTab(event, '${tabId}')">${cat}</button>`;
                     
-                    // 產生下方的勾選內容
                     panesHtml += `<div class="tab-pane checkbox-group" id="${tabId}" style="${displayStyle}">`;
                     categoriesMap[cat].forEach(lesson => {
-                        panesHtml += `<label><input type="checkbox" name="category" value="${lesson.id}" checked> ${lesson.name}</label>`;
+                        // V1.1.5 拿掉了 checked 屬性，預設全不選
+                        panesHtml += `<label><input type="checkbox" name="category" value="${lesson.id}"> ${lesson.name}</label>`;
                     });
                     panesHtml += `</div>`;
                     
@@ -395,7 +397,32 @@
         }
     }
 
-    // 管理員：上傳 JSON 寫入資料庫
+    // V1.1.5 新增：編輯課程名稱與分類
+    window.editLesson = async function(docId, oldName, oldCat) {
+        const newCat = prompt("請輸入新的「分類名稱」：", oldCat);
+        if (newCat === null) return; // 按取消
+        
+        const newName = prompt("請輸入新的「課程名稱」：", oldName);
+        if (newName === null) return; // 按取消
+
+        if (newCat.trim() === "" || newName.trim() === "") {
+            alert("分類與名稱不能為空白喔！");
+            return;
+        }
+
+        try {
+            await updateDoc(doc(db, "lessons", docId), {
+                category: newCat.trim(),
+                name: newName.trim()
+            });
+            alert("修改成功！");
+            loadLessonsFromDB();
+        } catch (err) {
+            alert("修改失敗！");
+            console.error(err);
+        }
+    }
+
     window.uploadJSON = function() {
         const fileInput = document.getElementById('json-upload');
         const categoryName = document.getElementById('new-category-name').value.trim() || '未分類';
@@ -418,14 +445,13 @@
 
                 const docId = 'lesson_' + Date.now();
                 await setDoc(doc(db, "lessons", docId), {
-                    category: categoryName, // 💡 新增存入資料庫的欄位
+                    category: categoryName, 
                     name: lessonName,
                     words: wordsArray
                 });
 
                 alert('上傳成功！');
                 document.getElementById('new-lesson-name').value = '';
-                // 保留 categoryName 不清空，方便連續上傳同一類的章節
                 fileInput.value = '';
                 loadLessonsFromDB();
 
@@ -457,6 +483,10 @@
     let mistakes =[];
     let direction = 'zh2ja'; 
     let fullPool =[];
+    
+    // V1.1.5 新增變數：記錄目前已作答題數與計時器
+    let answeredCount = 0;
+    let nextQuestionTimeout = null;
 
     function shuffleArray(array) {
         let currentIndex = array.length, randomIndex;
@@ -472,7 +502,6 @@
         direction = document.querySelector('input[name="direction"]:checked').value;
         const count = parseInt(document.getElementById('question-count').value);
         
-        // 不論在哪個書籤底下，只要有打勾的都會被抓到
         const selectedIds = Array.from(document.querySelectorAll('input[name="category"]:checked')).map(cb => cb.value);
         
         if (selectedIds.length === 0) {
@@ -498,9 +527,12 @@
         }
         quizData = shuffleArray(quizData);
 
+        // 數值重置
         currentQuestionIndex = 0;
         score = 0;
         mistakes =[];
+        answeredCount = 0;
+        if(nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
 
         showPage('quiz-page');
         showQuestion();
@@ -536,6 +568,8 @@
     function handleAnswer(selectedBtn, selectedOption, correctItem, ansField) {
         const allBtns = document.getElementById('options-container').querySelectorAll('button');
         allBtns.forEach(btn => btn.disabled = true);
+        
+        answeredCount++; // 紀錄已作答題數
 
         const isCorrect = selectedOption[ansField] === correctItem[ansField];
 
@@ -557,19 +591,34 @@
             });
         }
 
-        setTimeout(() => {
+        nextQuestionTimeout = setTimeout(() => {
             currentQuestionIndex++;
             if (currentQuestionIndex < quizData.length) {
                 showQuestion();
             } else {
-                showResult();
+                showResult(answeredCount);
             }
         }, 600); 
     }
 
-    function showResult() {
+    // V1.1.5 新增：提早結束測驗
+    window.earlyEndQuiz = function() {
+        if (answeredCount === 0) {
+            alert("你還沒作答任何題目，即將返回首頁！");
+            showPage('setup-page');
+            return;
+        }
+        // 如果正在等待 0.6 秒的下一題動畫，立刻清除計時器
+        if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
+        showResult(answeredCount);
+    }
+
+    // V1.1.5 參數修改：根據傳入的總題數 (totalQuestions) 計算
+    function showResult(totalQuestions) {
+        if (!totalQuestions) totalQuestions = quizData.length;
+        
         showPage('result-page');
-        document.getElementById('score-text').innerText = `分數: ${score} / ${quizData.length}`;
+        document.getElementById('score-text').innerText = `分數: ${score} / ${totalQuestions}`;
 
         const mistakeContainer = document.getElementById('mistakes-container');
         const mistakeList = document.getElementById('mistake-list');
