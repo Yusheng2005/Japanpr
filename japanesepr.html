@@ -130,17 +130,21 @@
             border-radius: 10px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
         }
         .btn-danger:hover { background: #dc2626; transform: translateY(-1px); }
-        .btn:disabled { cursor: not-allowed; opacity: 0.6; filter: grayscale(100%); }
+        
+        /* 修正：移除灰階效果，只降低未選中按鈕的透明度 */
+        .btn:disabled { cursor: not-allowed; opacity: 0.5; }
         
         /* 測驗區與錯題 */
         .correct { 
             background: #10b981 !important; color: white !important; 
-            border-color: #10b981 !important; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); 
+            border-color: #10b981 !important; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important; 
+            opacity: 1 !important; /* 強制保持亮度 */
         }
         .wrong { 
             background: #ef4444 !important; color: white !important; 
-            border-color: #ef4444 !important; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); 
+            border-color: #ef4444 !important; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3) !important; 
             animation: shake 0.4s; 
+            opacity: 1 !important; /* 強制保持亮度 */
         }
         
         /* 答錯震動動畫 */
@@ -277,8 +281,6 @@
     <button class="btn btn-primary" style="margin-top: 20px;" onclick="showPage('setup-page')">繼續練習</button>
 </div>
 
-<!-- ================= 以下區域為 Firebase 與 JS 邏輯，完全無更動 ================= -->
-
 <!-- 載入 Firebase 模組 (v10 modular) -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -286,7 +288,7 @@
     import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     // ⚠️ 這裡請換成你自己的 Firebase Config ⚠️
-const firebaseConfig = {
+    const firebaseConfig = {
   apiKey: "AIzaSyAP_-yJSyAx5r0x5e6br99yJvwCdji1yQ0",
   authDomain: "japanese-practice-39205.firebaseapp.com",
   projectId: "japanese-practice-39205",
@@ -457,7 +459,7 @@ const firebaseConfig = {
     let quizData =[];
     let currentQuestionIndex = 0;
     let score = 0;
-    let mistakes = [];
+    let mistakes =[];
     let direction = 'zh2ja'; 
     let fullPool =[];
 
@@ -536,6 +538,7 @@ const firebaseConfig = {
 
     function handleAnswer(selectedBtn, selectedOption, correctItem, ansField) {
         const allBtns = document.getElementById('options-container').querySelectorAll('button');
+        // 先鎖定所有按鈕防止連點
         allBtns.forEach(btn => btn.disabled = true);
 
         const isCorrect = selectedOption[ansField] === correctItem[ansField];
@@ -545,6 +548,7 @@ const firebaseConfig = {
             score++;
         } else {
             selectedBtn.classList.add('wrong');
+            // 把正確答案也標示出來
             allBtns.forEach(btn => {
                 if (btn.innerText === correctItem[ansField]) {
                     btn.classList.add('correct');
@@ -565,7 +569,7 @@ const firebaseConfig = {
             } else {
                 showResult();
             }
-        }, 600); // 增加一點延遲讓動畫跑完
+        }, 600); 
     }
 
     function showResult() {
