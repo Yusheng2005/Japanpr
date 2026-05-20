@@ -6,7 +6,7 @@
     <title>日文單字測驗練習</title>
     <!-- 引入字體 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <!-- 💡 V2.0.1 新增：Cloudflare Turnstile 驗證腳本 -->
+    <!-- Cloudflare Turnstile 驗證腳本 -->
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     
     <style>
@@ -211,7 +211,7 @@
 <div class="container" id="setup-page">
     <h1>日文單字測驗練習 🌸</h1>
     
-    <!-- 💡 V2.0.1 新增：Turnstile 驗證區域，必須通過驗證才會請求金鑰 -->
+    <!-- Turnstile 驗證區域 -->
     <div class="setting-group" id="turnstile-container">
         <label>請先完成安全驗證</label>
         <div style="display: flex; justify-content: center; margin: 10px 0;">
@@ -277,19 +277,19 @@
     <button class="btn btn-primary" style="margin-top: 20px;" onclick="showPage('setup-page')">繼續練習</button>
 </div>
 
-<!-- V2.0.1 頁底 -->
+<!-- V2.0.2 頁底 -->
 <footer>
-    V 2.0.1 &nbsp;&nbsp;|&nbsp;&nbsp; Built by Minami
+    V 2.0.2 &nbsp;&nbsp;|&nbsp;&nbsp; Built by Minami
 </footer>
 
-<!-- 💡 V2.0.1 新增：Turnstile 成功驗證的回呼函數，取得 token 並向 Cloudflare Worker 請求金鑰 -->
+<!-- Turnstile 成功驗證的回呼 -->
 <script>
     window.onTurnstileSuccess = async function(token) {
         const loadingEl = document.getElementById('loading-text');
         loadingEl.innerText = '安全驗證成功，正在載入資料庫...';
         
         try {
-            // ⚠️ 請將此 URL 替換成你部署完的 Cloudflare Worker 網址 ⚠️
+            // ⚠️ 請將此 URL 替換成你的 Cloudflare Worker 網址 ⚠️
             const workerUrl = 'https://firebase-key-proxy.y-ys-sl-l1226.workers.dev'; 
             
             const response = await fetch(workerUrl, {
@@ -299,15 +299,13 @@
             });
 
             if (!response.ok) {
-                throw new Error('中介伺服器驗證失敗，無法獲取安全金鑰。');
+                const errData = await response.json().catch(() => ({}));
+                const details = errData.details ? `原因：${JSON.stringify(errData.details)}` : '';
+                throw new Error(`中介伺服器驗證失敗，無法獲取安全金鑰。${details}`);
             }
 
             const firebaseConfig = await response.json();
-            
-            // 成功取得金鑰，觸發自訂事件初始化 Firebase
             window.dispatchEvent(new CustomEvent('init-firebase', { detail: firebaseConfig }));
-            
-            // 隱藏 Turnstile 驗證容器
             document.getElementById('turnstile-container').classList.add('hidden');
 
         } catch (err) {
@@ -327,14 +325,12 @@
     let vocabulariesData =[]; 
     window.dbLessons =[]; 
 
-    // 💡 監聽到安全驗證成功事件後，才開始初始化 Firebase
     window.addEventListener('init-firebase', (e) => {
         const firebaseConfig = e.detail;
         const app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         db = getFirestore(app);
 
-        // 初始化使用者驗證狀態監聽
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 document.getElementById('nav-admin-text').style.display = 'block';
@@ -388,7 +384,8 @@
                     await setDoc(doc(db, "lessons", docId), {
                         category: categoryName, 
                         name: lessonName,
-                        words: wordsArray
+                        words: wordsArray,
+                        order: Date.now() // 💡 V2.0.2：上傳新課程時自動附加當前時間戳記作為預設順序
                     });
 
                     alert('上傳成功！');
@@ -439,7 +436,41 @@
             }
         }
 
-        // 開始從資料庫讀取課程
+        // 💡 V2.0.2 新增：處理 🔼 🔽 上下移動的核心邏輯
+        window.moveLesson = async function(index, direction) {
+            if (!db) return;
+            if (direction === 'up' && index === 0) return;
+            if (direction === 'down' && index === vocabulariesData.length - 1) return;
+
+            const targetIndex = direction === 'up' ? index - 1 : index + 1;
+            
+            let currentItem = vocabulariesData[index];
+            let targetItem = vocabulariesData[targetIndex];
+
+            let currentOrder = currentItem.order || 0;
+            let targetOrder = targetItem.order || 0;
+
+            // 如果兩者的 order 相同，重新為本地整個列表分配間距 10 的順序
+            if (currentOrder === targetOrder) {
+                vocabulariesData.forEach((item, idx) => {
+                    item.order = idx * 10;
+                });
+                currentOrder = currentItem.order;
+                targetOrder = targetItem.order;
+            }
+
+            try {
+                // 交換兩者在資料庫中的順序
+                await updateDoc(doc(db, "lessons", currentItem.id), { order: targetOrder });
+                await updateDoc(doc(db, "lessons", targetItem.id), { order: currentOrder });
+                
+                loadLessonsFromDB();
+            } catch (err) {
+                alert("移動失敗！");
+                console.error(err);
+            }
+        }
+
         loadLessonsFromDB();
     });
 
@@ -449,6 +480,7 @@
         if(pageId === 'setup-page' && auth) loadLessonsFromDB(); 
     }
 
+    // 讀取課程並渲染
     async function loadLessonsFromDB() {
         if (!db) return;
         document.getElementById('loading-text').classList.remove('hidden');
@@ -466,25 +498,21 @@
                 const docId = doc.id;
                 const catName = data.category || '未分類'; 
                 
-                vocabulariesData.push({ id: docId, name: data.name, category: catName, words: data.words });
-                
-                if (!categoriesMap[catName]) categoriesMap[catName] =[];
-                categoriesMap[catName].push({ id: docId, name: data.name });
-                
-                const safeName = data.name.replace(/'/g, "\\'");
-                const safeCat = catName.replace(/'/g, "\\'");
+                vocabulariesData.push({ 
+                    id: docId, 
+                    name: data.name, 
+                    category: catName, 
+                    words: data.words,
+                    order: data.order !== undefined ? data.order : 0 // 💡 V2.0.2 讀取 order 欄位
+                });
+            });
 
-                adminHtml += `
-                    <li class="admin-lesson-item">
-                        <div class="admin-lesson-header">
-                            <span>${data.name} (共 ${data.words.length} 字)</span>
-                            <div>
-                                <button class="btn-edit" onclick="editLesson('${docId}', '${safeName}', '${safeCat}')">編輯</button>
-                                <button class="btn-danger" onclick="deleteLesson('${docId}')">刪除</button>
-                            </div>
-                        </div>
-                        <span class="admin-badge">分類：${catName}</span>
-                    </li>`;
+            // 💡 V2.0.2 依據 order 欄位進行排序 (相同時依 id 作為穩定排序 fallback)
+            vocabulariesData.sort((a, b) => {
+                if (a.order !== b.order) {
+                    return a.order - b.order;
+                }
+                return a.id.localeCompare(b.id);
             });
 
             window.dbLessons = vocabulariesData;
@@ -496,6 +524,13 @@
                 let tabsHtml = '';
                 let panesHtml = '';
                 let index = 0;
+
+                // 💡 依據已排序的單字列表建立大分類 (會自然連動決定大分類書籤的順序)
+                vocabulariesData.forEach((item) => {
+                    const catName = item.category;
+                    if (!categoriesMap[catName]) categoriesMap[catName] = [];
+                    categoriesMap[catName].push({ id: item.id, name: item.name });
+                });
 
                 for (let cat in categoriesMap) {
                     const isFirst = (index === 0);
@@ -519,6 +554,26 @@
                 document.getElementById('start-btn').disabled = false;
             }
             
+            // 💡 V2.0.2：後台列表增加 🔼 和 🔽 按鈕，並傳入正確的索引值
+            vocabulariesData.forEach((item, idx) => {
+                const safeName = item.name.replace(/'/g, "\\'");
+                const safeCat = item.category.replace(/'/g, "\\'");
+
+                adminHtml += `
+                    <li class="admin-lesson-item">
+                        <div class="admin-lesson-header">
+                            <span>${item.name} (共 ${item.words.length} 字)</span>
+                            <div>
+                                <button class="btn" style="background:#f8fafc; border:1px solid #cbd5e1; padding: 4px 8px; font-size: 12px; width: auto; margin: 0 4px 0 0; display: inline-block; cursor: pointer;" onclick="moveLesson(${idx}, 'up')">🔼</button>
+                                <button class="btn" style="background:#f8fafc; border:1px solid #cbd5e1; padding: 4px 8px; font-size: 12px; width: auto; margin: 0 8px 0 0; display: inline-block; cursor: pointer;" onclick="moveLesson(${idx}, 'down')">🔽</button>
+                                <button class="btn-edit" onclick="editLesson('${item.id}', '${safeName}', '${safeCat}')">編輯</button>
+                                <button class="btn-danger" onclick="deleteLesson('${item.id}')">刪除</button>
+                            </div>
+                        </div>
+                        <span class="admin-badge">分類：${item.category}</span>
+                    </li>`;
+            });
+
             document.getElementById('admin-lesson-list').innerHTML = adminHtml;
             document.getElementById('loading-text').classList.add('hidden');
             document.getElementById('dynamic-categories-container').classList.remove('hidden');
