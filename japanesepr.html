@@ -152,7 +152,28 @@
 
         /* 管理員列表 */
         .admin-lesson-list { list-style: none; padding: 0; }
-        .admin-lesson-item { display: flex; flex-direction: column; gap: 8px; background: #ffffff; border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 12px; margin-bottom: 10px; font-weight: 700; color: #334155; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        
+        /* 💡 V2.0.3 新增：拖曳排序時的視覺回饋樣式 */
+        .admin-lesson-item { 
+            display: flex; flex-direction: column; gap: 8px; background: #ffffff; 
+            border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 12px; 
+            margin-bottom: 10px; font-weight: 700; color: #334155; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            transition: background-color 0.2s, border 0.2s, transform 0.2s;
+            cursor: grab;
+        }
+        .admin-lesson-item:active { cursor: grabbing; }
+        .admin-lesson-item.dragging {
+            opacity: 0.4;
+            background: #f1f5f9;
+            border: 2px dashed #3b82f6 !important;
+            transform: scale(0.98);
+        }
+        .admin-lesson-item.drag-over {
+            border-top: 3px solid #3b82f6 !important;
+            background: #eff6ff;
+        }
+
         .admin-lesson-header { display: flex; justify-content: space-between; align-items: center; width: 100%;}
         .admin-badge { background: #e2e8f0; padding: 4px 8px; border-radius: 6px; font-size: 12px; color: #475569;}
         
@@ -198,7 +219,7 @@
     <hr style="margin: 24px 0; border: 0; border-top: 2px dashed #e2e8f0;">
 
     <div class="setting-group">
-        <label>2. 管理現有課程</label>
+        <label>2. 管理現有課程 (可直接上下拖曳排序 ☰)</label>
         <ul class="admin-lesson-list" id="admin-lesson-list">
             <!-- 課程列表 JS 產生 -->
         </ul>
@@ -277,9 +298,9 @@
     <button class="btn btn-primary" style="margin-top: 20px;" onclick="showPage('setup-page')">繼續練習</button>
 </div>
 
-<!-- V2.0.2 頁底 -->
+<!-- V2.0.3 頁底 -->
 <footer>
-    V 2.0.2 &nbsp;&nbsp;|&nbsp;&nbsp; Built by Minami
+    V 2.0.3 &nbsp;&nbsp;|&nbsp;&nbsp; Built by Minami
 </footer>
 
 <!-- Turnstile 成功驗證的回呼 -->
@@ -324,6 +345,18 @@
     let auth, db;
     let vocabulariesData =[]; 
     window.dbLessons =[]; 
+
+    // 💡 V2.0.3 修正：極速穩定版 Tab 切換，徹底解決「其他資料夾無法點選」Bug
+    window.switchTab = function(btn, tabId) {
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
+        const targetPane = document.getElementById(tabId);
+        if (targetPane) {
+            targetPane.style.display = 'flex';
+        }
+        btn.classList.add('active');
+    }
 
     window.addEventListener('init-firebase', (e) => {
         const firebaseConfig = e.detail;
@@ -385,7 +418,7 @@
                         category: categoryName, 
                         name: lessonName,
                         words: wordsArray,
-                        order: Date.now() // 💡 V2.0.2：上傳新課程時自動附加當前時間戳記作為預設順序
+                        order: Date.now() 
                     });
 
                     alert('上傳成功！');
@@ -436,37 +469,57 @@
             }
         }
 
-        // 💡 V2.0.2 新增：處理 🔼 🔽 上下移動的核心邏輯
-        window.moveLesson = async function(index, direction) {
-            if (!db) return;
-            if (direction === 'up' && index === 0) return;
-            if (direction === 'down' && index === vocabulariesData.length - 1) return;
+        // 💡 V2.0.3 新增：原生拖曳排序 (HTML5 Drag & Drop API) 核心後端邏輯
+        let draggedIndex = null;
 
-            const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        window.moveLessonDragStart = function(e, index) {
+            draggedIndex = index;
+            e.dataTransfer.effectAllowed = 'move';
+            e.currentTarget.classList.add('dragging');
+        }
+
+        window.moveLessonDragEnd = function(e) {
+            e.currentTarget.classList.remove('dragging');
+            document.querySelectorAll('.admin-lesson-item').forEach(item => {
+                item.classList.remove('drag-over');
+            });
+        }
+
+        window.moveLessonDragOver = function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        window.moveLessonDragEnter = function(e) {
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        window.moveLessonDragLeave = function(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        window.moveLessonDrop = async function(e, targetIndex) {
+            e.preventDefault();
+            if (draggedIndex === null || draggedIndex === targetIndex) return;
+
+            const draggedItem = vocabulariesData[draggedIndex];
             
-            let currentItem = vocabulariesData[index];
-            let targetItem = vocabulariesData[targetIndex];
-
-            let currentOrder = currentItem.order || 0;
-            let targetOrder = targetItem.order || 0;
-
-            // 如果兩者的 order 相同，重新為本地整個列表分配間距 10 的順序
-            if (currentOrder === targetOrder) {
-                vocabulariesData.forEach((item, idx) => {
-                    item.order = idx * 10;
-                });
-                currentOrder = currentItem.order;
-                targetOrder = targetItem.order;
-            }
+            // 1. 在本地陣列重新排序
+            vocabulariesData.splice(draggedIndex, 1);
+            vocabulariesData.splice(targetIndex, 0, draggedItem);
 
             try {
-                // 交換兩者在資料庫中的順序
-                await updateDoc(doc(db, "lessons", currentItem.id), { order: targetOrder });
-                await updateDoc(doc(db, "lessons", targetItem.id), { order: currentOrder });
+                // 2. 使用 Promise.all 平行處理，將全新排序後的 order 儲存回 Firestore 
+                const updatePromises = vocabulariesData.map((item, idx) => {
+                    const newOrder = idx * 10;
+                    item.order = newOrder; // 更新本地快照
+                    return updateDoc(doc(db, "lessons", item.id), { order: newOrder });
+                });
                 
-                loadLessonsFromDB();
+                await Promise.all(updatePromises);
+                loadLessonsFromDB(); // 重新整理資料夾與列表
             } catch (err) {
-                alert("移動失敗！");
+                alert("排序更新失敗！");
                 console.error(err);
             }
         }
@@ -503,11 +556,11 @@
                     name: data.name, 
                     category: catName, 
                     words: data.words,
-                    order: data.order !== undefined ? data.order : 0 // 💡 V2.0.2 讀取 order 欄位
+                    order: data.order !== undefined ? data.order : 0 
                 });
             });
 
-            // 💡 V2.0.2 依據 order 欄位進行排序 (相同時依 id 作為穩定排序 fallback)
+            // 依據 order 排序
             vocabulariesData.sort((a, b) => {
                 if (a.order !== b.order) {
                     return a.order - b.order;
@@ -525,7 +578,7 @@
                 let panesHtml = '';
                 let index = 0;
 
-                // 💡 依據已排序的單字列表建立大分類 (會自然連動決定大分類書籤的順序)
+                // 建立有序的大分類 Map
                 vocabulariesData.forEach((item) => {
                     const catName = item.category;
                     if (!categoriesMap[catName]) categoriesMap[catName] = [];
@@ -538,7 +591,8 @@
                     const displayStyle = isFirst ? 'display: flex;' : 'display: none;';
                     const tabId = 'pane-' + index;
                     
-                    tabsHtml += `<button class="tab-btn ${activeClass}" onclick="switchTab(event, '${tabId}')">${cat}</button>`;
+                    // 💡 V2.0.3 修正：onclick 修改為將 `this` 傳遞進去，確保跨平台百分之百能點擊切換
+                    tabsHtml += `<button class="tab-btn ${activeClass}" onclick="switchTab(this, '${tabId}')">${cat}</button>`;
                     
                     panesHtml += `<div class="tab-pane checkbox-group" id="${tabId}" style="${displayStyle}">`;
                     categoriesMap[cat].forEach(lesson => {
@@ -554,18 +608,25 @@
                 document.getElementById('start-btn').disabled = false;
             }
             
-            // 💡 V2.0.2：後台列表增加 🔼 和 🔽 按鈕，並傳入正確的索引值
+            // 💡 V2.0.3 新增：將管理員列表修改為原生拖曳架構 (綁定 HTML5 Drag & Drop 事件)
             vocabulariesData.forEach((item, idx) => {
                 const safeName = item.name.replace(/'/g, "\\'");
                 const safeCat = item.category.replace(/'/g, "\\'");
 
                 adminHtml += `
-                    <li class="admin-lesson-item">
+                    <li class="admin-lesson-item" draggable="true" 
+                        ondragstart="moveLessonDragStart(event, ${idx})" 
+                        ondragend="moveLessonDragEnd(event)" 
+                        ondragover="moveLessonDragOver(event)" 
+                        ondragenter="moveLessonDragEnter(event)" 
+                        ondragleave="moveLessonDragLeave(event)" 
+                        ondrop="moveLessonDrop(event, ${idx})">
                         <div class="admin-lesson-header">
-                            <span>${item.name} (共 ${item.words.length} 字)</span>
+                            <span style="display: flex; align-items: center; gap: 8px; user-select: none;">
+                                <span style="color: #94a3b8; cursor: grab; font-size: 18px; font-weight: bold; margin-right: 4px;">☰</span>
+                                ${item.name} (共 ${item.words.length} 字)
+                            </span>
                             <div>
-                                <button class="btn" style="background:#f8fafc; border:1px solid #cbd5e1; padding: 4px 8px; font-size: 12px; width: auto; margin: 0 4px 0 0; display: inline-block; cursor: pointer;" onclick="moveLesson(${idx}, 'up')">🔼</button>
-                                <button class="btn" style="background:#f8fafc; border:1px solid #cbd5e1; padding: 4px 8px; font-size: 12px; width: auto; margin: 0 8px 0 0; display: inline-block; cursor: pointer;" onclick="moveLesson(${idx}, 'down')">🔽</button>
                                 <button class="btn-edit" onclick="editLesson('${item.id}', '${safeName}', '${safeCat}')">編輯</button>
                                 <button class="btn-danger" onclick="deleteLesson('${item.id}')">刪除</button>
                             </div>
