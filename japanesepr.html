@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>日文單字測驗練習</title>
-    <!-- 引入高質感的 Google 字體 -->
+    <!-- 引入字體 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- 💡 V2.0.1 新增：Cloudflare Turnstile 驗證腳本 -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     
     <style>
         /* 基礎設定 */
@@ -105,7 +107,7 @@
         .btn-edit { background: #3b82f6; color: white; padding: 8px 16px; font-size: 14px; width: auto; display: inline-block; margin: 0 8px 0 0; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3); }
         .btn-edit:hover { background: #2563eb; transform: translateY(-1px); }
 
-        /* 💡 V1.1.6 新增：淡淺藍色結束測驗按鈕 */
+        /* 淡淺藍色結束測驗按鈕 */
         .btn-light-blue { 
             display: block; width: 100%; padding: 16px; margin: 30px 0 0 0; 
             border: 1px solid #bae6fd; border-radius: 16px; 
@@ -122,7 +124,6 @@
         .wrong { background: #ef4444 !important; color: white !important; border-color: #ef4444 !important; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3) !important; animation: shake 0.4s; opacity: 1 !important; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
         
-        /* 💡 V1.1.6 新增：可點擊發音單字的動態效果與提示樣式 */
         .question-text { font-size: 40px; text-align: center; margin: 30px 0; font-weight: 900; color: #0f172a;}
         .question-text.clickable {
             cursor: pointer;
@@ -178,7 +179,7 @@
     <h2>管理員登入</h2>
     <input type="text" id="email" placeholder="信箱 (例如 user@admin.com)">
     <input type="password" id="password" placeholder="密碼">
-    <button class="btn btn-primary" onclick="handleLogin()">登入</button>
+    <button class="btn btn-primary" onclick="window.handleLogin()">登入</button>
     <button class="btn" onclick="showPage('setup-page')">取消</button>
 </div>
 
@@ -191,7 +192,7 @@
         <input type="text" id="new-category-name" placeholder="輸入大分類名稱 (例如: 大家的日本語)">
         <input type="text" id="new-lesson-name" placeholder="輸入子課程名稱 (例如: 第一課)">
         <input type="file" id="json-upload" accept=".json">
-        <button class="btn btn-primary" onclick="uploadJSON()">上傳並儲存 🚀</button>
+        <button class="btn btn-primary" onclick="window.uploadJSON()">上傳並儲存 🚀</button>
     </div>
 
     <hr style="margin: 24px 0; border: 0; border-top: 2px dashed #e2e8f0;">
@@ -210,6 +211,15 @@
 <div class="container" id="setup-page">
     <h1>日文單字測驗練習 🌸</h1>
     
+    <!-- 💡 V2.0.1 新增：Turnstile 驗證區域，必須通過驗證才會請求金鑰 -->
+    <div class="setting-group" id="turnstile-container">
+        <label>請先完成安全驗證</label>
+        <div style="display: flex; justify-content: center; margin: 10px 0;">
+            <!-- ⚠️ 請將 data-sitekey 替換成你的 Turnstile Sitekey ⚠️ -->
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAADTIUGeeRzxpEX_0" data-callback="onTurnstileSuccess"></div>
+        </div>
+    </div>
+
     <div class="setting-group">
         <label>翻譯方向</label>
         <div class="radio-group">
@@ -220,7 +230,7 @@
 
     <div class="setting-group">
         <label>練習範圍</label>
-        <div id="loading-text">載入資料庫中...</div>
+        <div id="loading-text">請先完成上方安全驗證...</div>
         
         <div id="dynamic-categories-container" class="hidden">
             <div class="tabs-header" id="tabs-header">
@@ -248,13 +258,11 @@
 <div class="container hidden" id="quiz-page">
     <div class="progress" id="progress-text">題數: 1 / 10</div>
     
-    <!-- 💡 V1.1.6 調整：題目與點擊發音提示 -->
     <div class="question-text" id="question-text">題目</div>
     <div id="audio-hint" class="audio-hint hidden">🔊 點擊單字可發音</div>
     
     <div id="options-container"></div>
     
-    <!-- 💡 V1.1.6 調整：淡淺藍色，無表情符號的結束按鈕 -->
     <button class="btn-light-blue" onclick="earlyEndQuiz()">提早結束測驗</button>
 </div>
 
@@ -269,10 +277,45 @@
     <button class="btn btn-primary" style="margin-top: 20px;" onclick="showPage('setup-page')">繼續練習</button>
 </div>
 
-<!-- V1.1.6 頁底 -->
+<!-- V2.0.1 頁底 -->
 <footer>
-    V 1.1.6 &nbsp;&nbsp;|&nbsp;&nbsp; Built by Minami
+    V 2.0.1 &nbsp;&nbsp;|&nbsp;&nbsp; Built by Minami
 </footer>
+
+<!-- 💡 V2.0.1 新增：Turnstile 成功驗證的回呼函數，取得 token 並向 Cloudflare Worker 請求金鑰 -->
+<script>
+    window.onTurnstileSuccess = async function(token) {
+        const loadingEl = document.getElementById('loading-text');
+        loadingEl.innerText = '安全驗證成功，正在載入資料庫...';
+        
+        try {
+            // ⚠️ 請將此 URL 替換成你部署完的 Cloudflare Worker 網址 ⚠️
+            const workerUrl = 'https://firebase-key-proxy.y-ys-sl-l1226.workers.dev'; 
+            
+            const response = await fetch(workerUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+
+            if (!response.ok) {
+                throw new Error('中介伺服器驗證失敗，無法獲取安全金鑰。');
+            }
+
+            const firebaseConfig = await response.json();
+            
+            // 成功取得金鑰，觸發自訂事件初始化 Firebase
+            window.dispatchEvent(new CustomEvent('init-firebase', { detail: firebaseConfig }));
+            
+            // 隱藏 Turnstile 驗證容器
+            document.getElementById('turnstile-container').classList.add('hidden');
+
+        } catch (err) {
+            loadingEl.innerHTML = `<span style="color:#ef4444; font-weight:bold;">載入失敗：${err.message}</span>`;
+            console.error(err);
+        }
+    }
+</script>
 
 <!-- 載入 Firebase 模組 -->
 <script type="module">
@@ -280,69 +323,134 @@
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // ⚠️ 這裡請換成你自己的 Firebase Config ⚠️
-    const firebaseConfig = {
-  apiKey: "AIzaSyAP_-yJSyAx5r0x5e6br99yJvwCdji1yQ0",
-  authDomain: "japanese-practice-39205.firebaseapp.com",
-  projectId: "japanese-practice-39205",
-  storageBucket: "japanese-practice-39205.firebasestorage.app",
-  messagingSenderId: "1029965429346",
-  appId: "1:1029965429346:web:be3c5a302176b3f8fa6f3b"
-};
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
+    let auth, db;
     let vocabulariesData =[]; 
     window.dbLessons =[]; 
+
+    // 💡 監聽到安全驗證成功事件後，才開始初始化 Firebase
+    window.addEventListener('init-firebase', (e) => {
+        const firebaseConfig = e.detail;
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // 初始化使用者驗證狀態監聽
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('nav-admin-text').style.display = 'block';
+                document.getElementById('nav-logout').style.display = 'block';
+            } else {
+                document.getElementById('nav-admin-text').style.display = 'none';
+                document.getElementById('nav-logout').style.display = 'none';
+            }
+        });
+
+        // 綁定動態函數
+        window.handleLogin = async function() {
+            const email = document.getElementById('email').value;
+            const pw = document.getElementById('password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pw);
+                alert("登入成功！");
+                showPage('admin-page');
+                document.getElementById('email').value = '';
+                document.getElementById('password').value = '';
+            } catch (error) { alert("登入失敗，請檢查帳號密碼。"); }
+        }
+
+        window.handleLogout = async function() {
+            await signOut(auth);
+            alert("已登出！");
+            showPage('setup-page');
+        }
+
+        window.uploadJSON = function() {
+            const fileInput = document.getElementById('json-upload');
+            const categoryName = document.getElementById('new-category-name').value.trim() || '未分類';
+            const lessonName = document.getElementById('new-lesson-name').value.trim();
+            
+            if (!lessonName || fileInput.files.length === 0) {
+                alert('請輸入課程名稱並選擇檔案！');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async function(e) {
+                try {
+                    const wordsArray = JSON.parse(e.target.result);
+                    if (!Array.isArray(wordsArray) || !wordsArray[0].zh || !wordsArray[0].ja) {
+                        throw new Error("格式錯誤");
+                    }
+
+                    const docId = 'lesson_' + Date.now();
+                    await setDoc(doc(db, "lessons", docId), {
+                        category: categoryName, 
+                        name: lessonName,
+                        words: wordsArray
+                    });
+
+                    alert('上傳成功！');
+                    document.getElementById('new-lesson-name').value = '';
+                    fileInput.value = '';
+                    loadLessonsFromDB();
+
+                } catch (err) {
+                    alert('解析失敗！請確保檔案是標準的 JSON 陣列格式，包含 zh 與 ja 屬性。');
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        window.deleteLesson = async function(docId) {
+            if(confirm("確定要刪除這課的單字嗎？")) {
+                try {
+                    await deleteDoc(doc(db, "lessons", docId));
+                    alert("已刪除！");
+                    loadLessonsFromDB();
+                } catch (err) { alert("刪除失敗！"); }
+            }
+        }
+
+        window.editLesson = async function(docId, oldName, oldCat) {
+            const newCat = prompt("請輸入新的「分類名稱」：", oldCat);
+            if (newCat === null) return; 
+            
+            const newName = prompt("請輸入新的「課程名稱」：", oldName);
+            if (newName === null) return; 
+
+            if (newCat.trim() === "" || newName.trim() === "") {
+                alert("分類與名稱不能為空白喔！");
+                return;
+            }
+
+            try {
+                await updateDoc(doc(db, "lessons", docId), {
+                    category: newCat.trim(),
+                    name: newName.trim()
+                });
+                alert("修改成功！");
+                loadLessonsFromDB();
+            } catch (err) {
+                alert("修改失敗！");
+                console.error(err);
+            }
+        }
+
+        // 開始從資料庫讀取課程
+        loadLessonsFromDB();
+    });
 
     window.showPage = function(pageId) {
         document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
         document.getElementById(pageId).classList.remove('hidden');
-        if(pageId === 'setup-page') loadLessonsFromDB(); 
-    }
-
-    window.toggleLoginModal = function() {
-        if (auth.currentUser) showPage('admin-page');
-        else showPage('login-page');
-    }
-
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            document.getElementById('nav-admin-text').style.display = 'block';
-            document.getElementById('nav-logout').style.display = 'block';
-        } else {
-            document.getElementById('nav-admin-text').style.display = 'none';
-            document.getElementById('nav-logout').style.display = 'none';
-        }
-    });
-
-    window.handleLogin = async function() {
-        const email = document.getElementById('email').value;
-        const pw = document.getElementById('password').value;
-        try {
-            await signInWithEmailAndPassword(auth, email, pw);
-            alert("登入成功！");
-            showPage('admin-page');
-            document.getElementById('email').value = '';
-            document.getElementById('password').value = '';
-        } catch (error) { alert("登入失敗，請檢查帳號密碼。"); }
-    }
-
-    window.handleLogout = async function() {
-        await signOut(auth);
-        alert("已登出！");
-        showPage('setup-page');
-    }
-
-    window.switchTab = function(e, tabId) {
-        document.querySelectorAll('.tab-pane').forEach(pane => pane.style.display = 'none');
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(tabId).style.display = 'flex';
-        e.currentTarget.classList.add('active');
+        if(pageId === 'setup-page' && auth) loadLessonsFromDB(); 
     }
 
     async function loadLessonsFromDB() {
+        if (!db) return;
         document.getElementById('loading-text').classList.remove('hidden');
         document.getElementById('dynamic-categories-container').classList.add('hidden');
         document.getElementById('start-btn').disabled = true;
@@ -420,85 +528,9 @@
             document.getElementById('loading-text').innerText = "載入失敗，請檢查網路或資料庫設定。";
         }
     }
-
-    window.editLesson = async function(docId, oldName, oldCat) {
-        const newCat = prompt("請輸入新的「分類名稱」：", oldCat);
-        if (newCat === null) return; 
-        
-        const newName = prompt("請輸入新的「課程名稱」：", oldName);
-        if (newName === null) return; 
-
-        if (newCat.trim() === "" || newName.trim() === "") {
-            alert("分類與名稱不能為空白喔！");
-            return;
-        }
-
-        try {
-            await updateDoc(doc(db, "lessons", docId), {
-                category: newCat.trim(),
-                name: newName.trim()
-            });
-            alert("修改成功！");
-            loadLessonsFromDB();
-        } catch (err) {
-            alert("修改失敗！");
-            console.error(err);
-        }
-    }
-
-    window.uploadJSON = function() {
-        const fileInput = document.getElementById('json-upload');
-        const categoryName = document.getElementById('new-category-name').value.trim() || '未分類';
-        const lessonName = document.getElementById('new-lesson-name').value.trim();
-        
-        if (!lessonName || fileInput.files.length === 0) {
-            alert('請輸入課程名稱並選擇檔案！');
-            return;
-        }
-
-        const file = fileInput.files[0];
-        const reader = new FileReader();
-
-        reader.onload = async function(e) {
-            try {
-                const wordsArray = JSON.parse(e.target.result);
-                if (!Array.isArray(wordsArray) || !wordsArray[0].zh || !wordsArray[0].ja) {
-                    throw new Error("格式錯誤");
-                }
-
-                const docId = 'lesson_' + Date.now();
-                await setDoc(doc(db, "lessons", docId), {
-                    category: categoryName, 
-                    name: lessonName,
-                    words: wordsArray
-                });
-
-                alert('上傳成功！');
-                document.getElementById('new-lesson-name').value = '';
-                fileInput.value = '';
-                loadLessonsFromDB();
-
-            } catch (err) {
-                alert('解析失敗！請確保檔案是標準的 JSON 陣列格式，包含 zh 與 ja 屬性。');
-                console.error(err);
-            }
-        };
-        reader.readAsText(file);
-    }
-
-    window.deleteLesson = async function(docId) {
-        if(confirm("確定要刪除這課的單字嗎？")) {
-            try {
-                await deleteDoc(doc(db, "lessons", docId));
-                alert("已刪除！");
-                loadLessonsFromDB();
-            } catch (err) { alert("刪除失敗！"); }
-        }
-    }
-
-    window.onload = loadLessonsFromDB;
 </script>
 
+<!-- 測驗邏輯腳本 -->
 <script>
     let quizData =[];
     let currentQuestionIndex = 0;
@@ -510,10 +542,8 @@
     let answeredCount = 0;
     let nextQuestionTimeout = null;
 
-    // 💡 V1.1.6 新增：網頁內建語音播放日文單字
     window.speakJapanese = function(text) {
         if ('speechSynthesis' in window) {
-            // 先停止正在播放的語音避免重疊
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'ja-JP';
@@ -584,7 +614,6 @@
         
         qElement.innerText = qText;
 
-        // 💡 V1.1.6 新增：日翻中模式下（題目為日文），點擊題目發音
         if (direction === 'ja2zh') {
             qElement.classList.add('clickable');
             qElement.title = '點擊聽取日文發音 🔊';
