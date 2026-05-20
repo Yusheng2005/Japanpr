@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>日文單字測驗練習</title>
+    <!-- 引入高質感的 Google 字體 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
     
     <style>
@@ -104,13 +105,38 @@
         .btn-edit { background: #3b82f6; color: white; padding: 8px 16px; font-size: 14px; width: auto; display: inline-block; margin: 0 8px 0 0; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3); }
         .btn-edit:hover { background: #2563eb; transform: translateY(-1px); }
 
+        /* 💡 V1.1.6 新增：淡淺藍色結束測驗按鈕 */
+        .btn-light-blue { 
+            display: block; width: 100%; padding: 16px; margin: 30px 0 0 0; 
+            border: 1px solid #bae6fd; border-radius: 16px; 
+            font-size: 18px; font-weight: 700; cursor: pointer; 
+            transition: all 0.2s; background: #e0f2fe; color: #0369a1; 
+        }
+        .btn-light-blue:hover { background: #bae6fd; color: #0284c7; border-color: #7dd3fc; }
+        .btn-light-blue:active { transform: scale(0.98); }
+
         .btn:disabled { cursor: not-allowed; opacity: 0.5; }
         
         /* 測驗區與錯題 */
         .correct { background: #10b981 !important; color: white !important; border-color: #10b981 !important; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important; opacity: 1 !important; }
         .wrong { background: #ef4444 !important; color: white !important; border-color: #ef4444 !important; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3) !important; animation: shake 0.4s; opacity: 1 !important; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+        
+        /* 💡 V1.1.6 新增：可點擊發音單字的動態效果與提示樣式 */
         .question-text { font-size: 40px; text-align: center; margin: 30px 0; font-weight: 900; color: #0f172a;}
+        .question-text.clickable {
+            cursor: pointer;
+            transition: transform 0.2s, color 0.2s;
+        }
+        .question-text.clickable:hover {
+            color: #3b82f6;
+            transform: scale(1.05);
+        }
+        .audio-hint {
+            font-size: 14px; color: #64748b; text-align: center;
+            margin-top: -20px; margin-bottom: 25px; font-weight: 700;
+        }
+
         .progress { text-align: center; color: #64748b; font-weight: 700; letter-spacing: 1px; font-size: 14px; text-transform: uppercase; }
         .score-display { font-size: 32px; text-align: center; font-weight: 900; margin: 20px 0; color: #3b82f6; }
         
@@ -221,11 +247,15 @@
 <!-- 測驗頁面 -->
 <div class="container hidden" id="quiz-page">
     <div class="progress" id="progress-text">題數: 1 / 10</div>
+    
+    <!-- 💡 V1.1.6 調整：題目與點擊發音提示 -->
     <div class="question-text" id="question-text">題目</div>
+    <div id="audio-hint" class="audio-hint hidden">🔊 點擊單字可發音</div>
+    
     <div id="options-container"></div>
     
-    <!-- V1.1.5 新增：提早結束測驗按鈕 -->
-    <button class="btn" style="margin-top: 30px; background: #ffe4e6; color: #e11d48; border: 1px solid #fecdd3;" onclick="earlyEndQuiz()">⏹️ 提早結束測驗</button>
+    <!-- 💡 V1.1.6 調整：淡淺藍色，無表情符號的結束按鈕 -->
+    <button class="btn-light-blue" onclick="earlyEndQuiz()">提早結束測驗</button>
 </div>
 
 <!-- 結果頁面 -->
@@ -239,14 +269,13 @@
     <button class="btn btn-primary" style="margin-top: 20px;" onclick="showPage('setup-page')">繼續練習</button>
 </div>
 
-<!-- V1.1.5 頁底 -->
+<!-- V1.1.6 頁底 -->
 <footer>
-    V1.1.5 &nbsp;&nbsp;|&nbsp;&nbsp; Built by Minami
+    V1.1.6 &nbsp;&nbsp;|&nbsp;&nbsp; Built by Minami
 </footer>
 
 <!-- 載入 Firebase 模組 -->
 <script type="module">
-    // 💡 這裡有引入了新的 updateDoc 用來編輯資料
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -260,8 +289,6 @@
   messagingSenderId: "1029965429346",
   appId: "1:1029965429346:web:be3c5a302176b3f8fa6f3b"
 };
-
-
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
@@ -336,11 +363,9 @@
                 if (!categoriesMap[catName]) categoriesMap[catName] =[];
                 categoriesMap[catName].push({ id: docId, name: data.name });
                 
-                // 安全處理字串中的單引號，防止編輯按鈕報錯
                 const safeName = data.name.replace(/'/g, "\\'");
                 const safeCat = catName.replace(/'/g, "\\'");
 
-                // V1.1.5 新增編輯按鈕
                 adminHtml += `
                     <li class="admin-lesson-item">
                         <div class="admin-lesson-header">
@@ -374,7 +399,6 @@
                     
                     panesHtml += `<div class="tab-pane checkbox-group" id="${tabId}" style="${displayStyle}">`;
                     categoriesMap[cat].forEach(lesson => {
-                        // V1.1.5 拿掉了 checked 屬性，預設全不選
                         panesHtml += `<label><input type="checkbox" name="category" value="${lesson.id}"> ${lesson.name}</label>`;
                     });
                     panesHtml += `</div>`;
@@ -397,13 +421,12 @@
         }
     }
 
-    // V1.1.5 新增：編輯課程名稱與分類
     window.editLesson = async function(docId, oldName, oldCat) {
         const newCat = prompt("請輸入新的「分類名稱」：", oldCat);
-        if (newCat === null) return; // 按取消
+        if (newCat === null) return; 
         
         const newName = prompt("請輸入新的「課程名稱」：", oldName);
-        if (newName === null) return; // 按取消
+        if (newName === null) return; 
 
         if (newCat.trim() === "" || newName.trim() === "") {
             alert("分類與名稱不能為空白喔！");
@@ -484,9 +507,21 @@
     let direction = 'zh2ja'; 
     let fullPool =[];
     
-    // V1.1.5 新增變數：記錄目前已作答題數與計時器
     let answeredCount = 0;
     let nextQuestionTimeout = null;
+
+    // 💡 V1.1.6 新增：網頁內建語音播放日文單字
+    window.speakJapanese = function(text) {
+        if ('speechSynthesis' in window) {
+            // 先停止正在播放的語音避免重疊
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ja-JP';
+            window.speechSynthesis.speak(utterance);
+        } else {
+            console.warn('您的瀏覽器不支援語音播放功能。');
+        }
+    }
 
     function shuffleArray(array) {
         let currentIndex = array.length, randomIndex;
@@ -527,7 +562,6 @@
         }
         quizData = shuffleArray(quizData);
 
-        // 數值重置
         currentQuestionIndex = 0;
         score = 0;
         mistakes =[];
@@ -545,7 +579,23 @@
         const qText = direction === 'zh2ja' ? currentItem.zh : currentItem.ja;
         const ansField = direction === 'zh2ja' ? 'ja' : 'zh';
         
-        document.getElementById('question-text').innerText = qText;
+        const qElement = document.getElementById('question-text');
+        const audioHint = document.getElementById('audio-hint');
+        
+        qElement.innerText = qText;
+
+        // 💡 V1.1.6 新增：日翻中模式下（題目為日文），點擊題目發音
+        if (direction === 'ja2zh') {
+            qElement.classList.add('clickable');
+            qElement.title = '點擊聽取日文發音 🔊';
+            qElement.onclick = () => speakJapanese(currentItem.ja);
+            audioHint.classList.remove('hidden');
+        } else {
+            qElement.classList.remove('clickable');
+            qElement.title = '';
+            qElement.onclick = null;
+            audioHint.classList.add('hidden');
+        }
 
         let options = [currentItem];
         
@@ -569,7 +619,7 @@
         const allBtns = document.getElementById('options-container').querySelectorAll('button');
         allBtns.forEach(btn => btn.disabled = true);
         
-        answeredCount++; // 紀錄已作答題數
+        answeredCount++; 
 
         const isCorrect = selectedOption[ansField] === correctItem[ansField];
 
@@ -601,19 +651,16 @@
         }, 600); 
     }
 
-    // V1.1.5 新增：提早結束測驗
     window.earlyEndQuiz = function() {
         if (answeredCount === 0) {
             alert("你還沒作答任何題目，即將返回首頁！");
             showPage('setup-page');
             return;
         }
-        // 如果正在等待 0.6 秒的下一題動畫，立刻清除計時器
         if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
         showResult(answeredCount);
     }
 
-    // V1.1.5 參數修改：根據傳入的總題數 (totalQuestions) 計算
     function showResult(totalQuestions) {
         if (!totalQuestions) totalQuestions = quizData.length;
         
